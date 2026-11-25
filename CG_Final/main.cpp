@@ -1193,4 +1193,611 @@ namespace SceneRafid {
         else if(v.type==2) drawCNGRF(wx,v.baseY,v.dir,v.r,v.g,v.b);
         else drawBikeRF(wx,v.baseY,v.dir,v.r,v.g,v.b);
     }
+    void drawPersonRF(RFPerson p,int isLast){
+        float s=p.scale;
+        glColor3f(0.10f,0.08f,0.04f);
+        de(-0.012f*s,-0.060f*s,0.012f*s,0.006f*s,10);
+        de(0.012f*s,-0.060f*s,0.012f*s,0.006f*s,10);
+        glColor3f(p.pr,p.pg,p.pb);
+        dq(-0.018f*s,-0.058f*s,-0.004f*s,0.015f*s); dq(0.004f*s,-0.058f*s,0.018f*s,0.015f*s);
+        glColor3f(p.sr,p.sg,p.sb);
+        glBegin(GL_QUADS);
+        glVertex2f(-0.022f*s,0.015f*s); glVertex2f(0.022f*s,0.015f*s);
+        glVertex2f(0.024f*s,0.078f*s);  glVertex2f(-0.024f*s,0.078f*s);
+        glEnd();
+        glColor3f(p.skr,p.skg,p.skb); dc(0,0.110f*s,0.026f*s,20);
+        glColor3f(0.14f,0.08f,0.02f); dc(0,0.130f*s,0.025f*s,16);
+        if(isLast){
+            glColor3f(1,0,0); glLineWidth(2);
+            glBegin(GL_LINES); glVertex2f(0,0.165f*s); glVertex2f(0,0.140f*s); glEnd();
+            glBegin(GL_TRIANGLES);
+            glVertex2f(-0.008f*s,0.147f*s); glVertex2f(0,0.132f*s); glVertex2f(0.008f*s,0.147f*s);
+            glEnd();
+        }
+    }
+    void drawTrafficSignalRF(){
+        float sx=0.22f,sy=-0.580f;
+        glColor3f(0.35f,0.35f,0.38f); dq(sx-0.006f,sy-0.20f,sx+0.006f,sy);
+        glColor3f(0.12f,0.12f,0.14f); dq(sx-0.022f,sy,sx+0.022f,sy+0.080f);
+        if(g_signal==0) glColor3f(1,0.10f,0.10f); else glColor3f(0.20f,0,0);
+        dc(sx,sy+0.062f,0.013f,14);
+        if(g_signal==1) glColor3f(0.10f,1,0.22f); else glColor3f(0,0.18f,0.04f);
+        dc(sx,sy+0.030f,0.013f,14);
+    }
+    void drawLampRF(float x,float y){
+        glColor3f(0.42f,0.42f,0.45f); dq(x-0.005f,y,x+0.005f,y+0.24f);
+        glColor3f(1,0.95f,0.65f); dc(x+0.022f,y+0.262f,0.012f,12);
+    }
+    void handleCollision(){
+        int last=RF_NUM_PEOPLE-1;
+        RFPerson* pl=&g_people[last];
+        float lx=pl->baseX+pl->offsetX;
+        for(int i=0;i<last;i++){
+            RFPerson* o=&g_people[i];
+            float ox=o->baseX+o->offsetX;
+            if(fabsf(lx-ox)<RF_COLLIDE){
+                o->dir=-o->dir;
+                float ov=RF_COLLIDE-fabsf(lx-ox);
+                if(lx<ox) o->offsetX+=ov+0.01f; else o->offsetX-=ov+0.01f;
+                break;
+            }
+        }
+    }
+    void update(){
+        if(g_paused) return;
+        g_sunAngle+=0.00010f;
+        for(int i=0;i<5;i++){g_cloudX[i]+=g_cloudSp[i];if(g_cloudX[i]>1.6f)g_cloudX[i]=-1.6f;}
+        if(g_signal==1){
+            for(int i=0;i<RF_NUM_VEHICLES;i++){
+                RFVehicle* v=&g_vehicles[i];
+                float eff=v->originalSpeed*g_roadSpeedMult;
+                v->offsetX+=eff*v->dir;
+                float wx=v->baseX+v->offsetX;
+                if(v->dir>0&&wx>1.25f){wx=-1.25f;v->offsetX=wx-v->baseX;}
+                else if(v->dir<0&&wx<-1.25f){wx=1.25f;v->offsetX=wx-v->baseX;}
+            }
+            g_metroX+=g_metroSpeed; if(g_metroX>1.5f) g_metroX=-1.5f;
+        } else {
+            for(int i=0;i<RF_NUM_VEHICLES;i++){
+                RFVehicle* v=&g_vehicles[i];
+                float cur=v->baseX+v->offsetX;
+                bool past=(v->dir>0)?(cur>0.22f):(cur<0.22f);
+                if(past){
+                    v->offsetX+=v->originalSpeed*g_roadSpeedMult*v->dir;
+                    float wx=v->baseX+v->offsetX;
+                    if(v->dir>0&&wx>1.25f){wx=-1.25f;v->offsetX=wx-v->baseX;}
+                    else if(v->dir<0&&wx<-1.25f){wx=1.25f;v->offsetX=wx-v->baseX;}
+                }
+            }
+        }
+        for(int i=0;i<RF_NUM_PEOPLE;i++){
+            RFPerson* p=&g_people[i];
+            p->offsetX+=p->speed*p->dir;
+            float wx=p->baseX+p->offsetX;
+            if(wx>1){wx=-1;p->offsetX=wx-p->baseX;}
+            else if(wx<-1){wx=1;p->offsetX=wx-p->baseX;}
+        }
+        handleCollision();
+    }
+    void render(){
+        glClear(GL_COLOR_BUFFER_BIT);
+        glLoadIdentity();
+        drawBackground(); drawSunRF();
+        for(int i=0;i<5;i++) drawCloudRF(g_cloudX[i],g_cloudY[i]);
+        // background rectangles (skyscraper shapes)
+        glColor3f(0.55f,0.62f,0.70f); dq(-1,-0.10f,-0.88f,0.55f);
+        glColor3f(0.50f,0.58f,0.66f); dq(-0.90f,-0.10f,-0.80f,0.42f);
+        drawSkyscraper(-0.72f,-0.10f,0.20f,0.82f,0.38f,0.52f,0.70f,0.55f,0.75f,0.90f,4,8);
+        drawSkyscraper(-0.50f,-0.10f,0.18f,0.68f,0.45f,0.60f,0.72f,0.60f,0.78f,0.92f,3,7);
+        drawSkyscraper(-0.30f,-0.10f,0.22f,0.92f,0.35f,0.50f,0.68f,0.52f,0.72f,0.90f,5,10);
+        drawSkyscraper(-0.06f,-0.10f,0.20f,0.75f,0.40f,0.55f,0.68f,0.58f,0.76f,0.88f,4,8);
+        drawSkyscraper(0.16f,-0.10f,0.18f,0.82f,0.38f,0.52f,0.70f,0.55f,0.75f,0.90f,4,9);
+        drawSkyscraper(0.54f,-0.10f,0.20f,0.72f,0.42f,0.56f,0.68f,0.58f,0.76f,0.90f,4,8);
+        for(float tx=-0.90f;tx<1;tx+=0.14f) drawTreeRF(tx,-0.42f,0.75f);
+        for(float tx=-0.85f;tx<1;tx+=0.22f) drawTreeRF(tx,-0.52f,0.55f);
+        drawViaduct(); drawMetro();
+        for(int i=0;i<RF_NUM_VEHICLES;i++) drawVehicleRF(g_vehicles[i]);
+        float lampX[]={-0.80f,-0.50f,-0.18f,0.12f,0.44f,0.76f};
+        for(int i=0;i<6;i++) drawLampRF(lampX[i],-0.550f);
+        drawTrafficSignalRF();
+        for(int i=0;i<RF_NUM_PEOPLE;i++){
+            RFPerson p=g_people[i]; float wx=p.baseX+p.offsetX;
+            glPushMatrix(); glTranslatef(wx,p.baseY,0); drawPersonRF(p,i==RF_NUM_PEOPLE-1); glPopMatrix();
+        }
+        glColor3f(0.2f,0.2f,0.5f);
+        glRasterPos2f(-0.95f,-0.92f);
+        const char* hint="S=Signal  SPACE=Pause  Arrows=Speed  ESC=Back";
+        for(const char* c=hint;*c;c++) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12,*c);
+        glutSwapBuffers();
+    }
+    void keyboard(unsigned char key,int,int){
+        if(key=='s'||key=='S') g_signal=!g_signal;
+        if(key==' ') g_paused=!g_paused;
+        if(key=='m'||key=='M') g_muted=1;
+        if(key=='u'||key=='U') g_muted=0;
+    }
+    void specialKeys(int key,int,int){
+        if(key==GLUT_KEY_UP){g_roadSpeedMult+=0.05f;if(g_roadSpeedMult>2)g_roadSpeedMult=2;}
+        else if(key==GLUT_KEY_DOWN){g_roadSpeedMult-=0.05f;if(g_roadSpeedMult<0.2f)g_roadSpeedMult=0.2f;}
+        else if(key==GLUT_KEY_LEFT){g_metroSpeed-=0.00005f;if(g_metroSpeed<0.0001f)g_metroSpeed=0.0001f;}
+        else if(key==GLUT_KEY_RIGHT){g_metroSpeed+=0.00005f;if(g_metroSpeed>0.0012f)g_metroSpeed=0.0012f;}
+    }
+    void mouseFunc(int button,int state,int,int){
+        if(state==GLUT_DOWN){
+            if(button==GLUT_LEFT_BUTTON) g_signal=!g_signal;
+            if(button==GLUT_RIGHT_BUTTON) g_paused=!g_paused;
+        }
+    }
+    void init(){
+        float vx[10]={-0.90f,-0.40f,0.10f,0.65f,-0.70f,0.80f,0.30f,-0.10f,-0.55f,0.55f};
+        float vy[10]={-0.640f,-0.640f,-0.640f,-0.640f,-0.640f,-0.760f,-0.760f,-0.760f,-0.760f,-0.760f};
+        float sp[10]={0.00045f,0.00038f,0.00042f,0.00050f,0.00055f,0.00048f,0.00040f,0.00044f,0.00052f,0.00035f};
+        float dr[10]={1,1,1,1,1,-1,-1,-1,-1,-1};
+        int   typ[10]={0,1,0,2,0,0,2,1,3,3};
+        float cr[10]={0.85f,0.90f,0.95f,0.10f,0.22f,0.18f,0.85f,0.85f,0.88f,0.10f};
+        float cg[10]={0.50f,0.82f,0.95f,0.60f,0.55f,0.55f,0.50f,0.82f,0.42f,0.45f};
+        float cb[10]={0.05f,0.12f,0.95f,0.20f,0.88f,0.18f,0.05f,0.10f,0.08f,0.80f};
+        float cr2[10]={0.60f,0.70f,0.70f,0.08f,0.14f,0.12f,0.60f,0.65f,0.55f,0.06f};
+        float cg2[10]={0.35f,0.62f,0.70f,0.45f,0.38f,0.38f,0.32f,0.62f,0.25f,0.28f};
+        float cb2[10]={0.02f,0.08f,0.72f,0.14f,0.65f,0.12f,0.02f,0.06f,0.04f,0.55f};
+        for(int i=0;i<RF_NUM_VEHICLES;i++){
+            g_vehicles[i].baseX=vx[i]; g_vehicles[i].baseY=vy[i]; g_vehicles[i].offsetX=0;
+            g_vehicles[i].originalSpeed=sp[i]+((float)rand()/RAND_MAX)*0.00015f;
+            g_vehicles[i].speed=g_vehicles[i].originalSpeed;
+            g_vehicles[i].dir=dr[i]; g_vehicles[i].type=typ[i];
+            g_vehicles[i].r=cr[i]; g_vehicles[i].g=cg[i]; g_vehicles[i].b=cb[i];
+            g_vehicles[i].r2=cr2[i]; g_vehicles[i].g2=cg2[i]; g_vehicles[i].b2=cb2[i];
+        }
+        float px[8]={-0.80f,-0.55f,-0.20f,0.15f,0.50f,0.72f,-0.38f,0.88f};
+        float py[8]={-0.820f,-0.820f,-0.820f,-0.820f,-0.820f,-0.820f,-0.820f,-0.820f};
+        float ps[8]={0.00030f,0.00025f,0.00032f,0.00028f,0.00035f,0.00022f,0.00027f,0.00033f};
+        float pd[8]={1,-1,1,-1,1,-1,1,-1};
+        float psc[8]={0.80f,0.82f,0.78f,0.80f,0.82f,0.78f,0.80f,0.82f};
+        float shr[8]={0.12f,0.88f,0.22f,0.88f,0.65f,0.78f,0.10f,0.36f};
+        float shg[8]={0.42f,0.30f,0.62f,0.78f,0.22f,0.22f,0.38f,0.62f};
+        float shb[8]={0.78f,0.12f,0.18f,0.10f,0.65f,0.22f,0.62f,0.18f};
+        float pnr[8]={0.10f,0.12f,0.08f,0.08f,0.18f,0.18f,0.14f,0.10f};
+        float png[8]={0.10f,0.18f,0.18f,0.08f,0.10f,0.10f,0.06f,0.16f};
+        float pnb[8]={0.20f,0.42f,0.08f,0.14f,0.28f,0.06f,0.28f,0.06f};
+        float skr[8]={0.82f,0.95f,0.80f,0.84f,0.85f,0.82f,0.95f,0.76f};
+        float skg[8]={0.60f,0.74f,0.58f,0.58f,0.64f,0.58f,0.74f,0.48f};
+        float skb[8]={0.42f,0.50f,0.40f,0.38f,0.44f,0.40f,0.50f,0.32f};
+        int wave[8]={0,1,0,1,0,1,0,1};
+        for(int i=0;i<RF_NUM_PEOPLE;i++){
+            g_people[i].baseX=px[i]; g_people[i].baseY=py[i]; g_people[i].offsetX=0;
+            g_people[i].speed=(i==7)?0.00015f:ps[i]+((float)rand()/RAND_MAX)*0.00010f;
+            g_people[i].dir=pd[i]; g_people[i].scale=psc[i];
+            g_people[i].sr=shr[i]; g_people[i].sg=shg[i]; g_people[i].sb=shb[i];
+            g_people[i].pr=pnr[i]; g_people[i].pg=png[i]; g_people[i].pb=pnb[i];
+            g_people[i].skr=skr[i]; g_people[i].skg=skg[i]; g_people[i].skb=skb[i];
+            g_people[i].wave=wave[i];
+        }
+    }
+    void reset(){ g_paused=0; g_signal=1; g_metroX=-0.30f; g_sunAngle=-0.3f; g_roadSpeedMult=1; init(); }
+} // namespace SceneRafid
 
+// ═══════════════════════════════════════════════════════════════════════════════
+//  SCENE 6 – Rahul Sarker (Futuristic City / Plane Crash)
+// ═══════════════════════════════════════════════════════════════════════════════
+namespace SceneRahul {
+    int sceneMode=0;
+    float planeX=-1.25f, heliX=-1.25f, carMove=0, cloudMove=0;
+    float trainX=-1.30f, flyingCar1X=-1.20f, flyingCar2X=1.20f, droneX=-1.20f, podX=-1.25f;
+    float crashPlane1X=-1.25f, crashPlane2X=1.25f;
+    bool crashActive=false, planeCrash=false;
+    float crashSmokeSize=0;
+    float boat1X=-1.10f, boat2X=-1.20f, boat3X=-1.30f, boat4X=-1.40f;
+    bool boat1Stop=false,boat2Stop=false,boat3Stop=false,boat4Stop=false;
+
+    void dr(float x,float y,float w,float h){
+        glBegin(GL_QUADS);
+        glVertex2f(x,y); glVertex2f(x+w,y); glVertex2f(x+w,y+h); glVertex2f(x,y+h);
+        glEnd();
+    }
+    void dtr(float x1,float y1,float x2,float y2,float x3,float y3){
+        glBegin(GL_TRIANGLES); glVertex2f(x1,y1); glVertex2f(x2,y2); glVertex2f(x3,y3); glEnd();
+    }
+    void dci(float cx,float cy,float r){
+        glBegin(GL_TRIANGLE_FAN); glVertex2f(cx,cy);
+        for(int i=0;i<=360;i++){float a=i*PI/180; glVertex2f(cx+cosf(a)*r,cy+sinf(a)*r);}
+        glEnd();
+    }
+    void del(float cx,float cy,float rx,float ry){
+        glBegin(GL_TRIANGLE_FAN); glVertex2f(cx,cy);
+        for(int i=0;i<=60;i++){float a=2*PI*i/60;glVertex2f(cx+cosf(a)*rx,cy+sinf(a)*ry);}
+        glEnd();
+    }
+    void drawGradRect(float x,float y,float w,float h,float r1,float g1,float b1,float r2,float g2,float b2){
+        glBegin(GL_QUADS);
+        glColor3f(r1,g1,b1); glVertex2f(x,y); glVertex2f(x+w,y);
+        glColor3f(r2,g2,b2); glVertex2f(x+w,y+h); glVertex2f(x,y+h);
+        glEnd();
+    }
+    void drawSky(){
+        if(sceneMode==0) drawGradRect(-1,-0.02f,2,1.02f,0.44f,0.76f,0.98f,0.12f,0.45f,0.82f);
+        else if(sceneMode==1) drawGradRect(-1,-0.02f,2,1.02f,1,0.60f,0.25f,0.72f,0.28f,0.45f);
+        else drawGradRect(-1,-0.02f,2,1.02f,0.08f,0.10f,0.24f,0.28f,0.12f,0.38f);
+    }
+    void drawGround(){
+        if(sceneMode==0) glColor3f(0.28f,0.62f,0.20f);
+        else if(sceneMode==1) glColor3f(0.32f,0.55f,0.18f);
+        else glColor3f(0.16f,0.34f,0.14f);
+        dr(-1,-1,2,0.98f);
+    }
+    void drawSunR(){
+        if(sceneMode==0){glColor3f(1,0.92f,0.10f);dci(-0.78f,0.78f,0.07f);}
+        else if(sceneMode==1){glColor3f(1,0.45f,0.08f);dci(-0.72f,0.55f,0.075f);}
+        else{glColor3f(0.92f,0.94f,1);dci(0.78f,0.78f,0.06f);}
+    }
+    void drawStars(){
+        if(sceneMode!=2) return;
+        glColor3f(1,0.95f,0.80f);
+        float sx[]={-0.9f,-0.78f,-0.64f,-0.5f,-0.38f,-0.2f,-0.08f,0.10f,0.24f,0.42f,0.56f,0.68f,0.80f,0.92f};
+        float sy[]={0.88f,0.72f,0.84f,0.74f,0.90f,0.80f,0.70f,0.88f,0.77f,0.90f,0.73f,0.84f,0.75f,0.88f};
+        float sr[]={0.004f,0.003f,0.0035f,0.004f,0.003f,0.004f,0.003f,0.004f,0.003f,0.004f,0.003f,0.0035f,0.004f,0.003f};
+        for(int i=0;i<14;i++) dci(sx[i],sy[i],sr[i]);
+    }
+    void drawCloudR(float x,float y){
+        if(sceneMode==0) glColor3f(1,1,1);
+        else if(sceneMode==1) glColor3f(1,0.78f,0.55f);
+        else glColor3f(0.72f,0.66f,0.88f);
+        del(x,y,0.07f,0.035f); del(x-0.05f,y,0.045f,0.030f); del(x+0.05f,y,0.045f,0.030f);
+        del(x-0.025f,y+0.03f,0.040f,0.028f); del(x+0.025f,y+0.03f,0.040f,0.028f);
+    }
+    void drawBuildingR(float x,float y,float w,float h,float r,float g,float b){
+        glColor3f(r,g,b); dr(x,y,w,h);
+        for(float wy=y+0.03f;wy<y+h-0.03f;wy+=0.055f)
+            for(float wx=x+0.015f;wx<x+w-0.02f;wx+=0.035f){
+                if(sceneMode==0) glColor3f(0.82f,0.95f,1);
+                else if(sceneMode==1) glColor3f(1,0.85f,0.45f);
+                else glColor3f(0.95f,0.98f,0.55f);
+                dr(wx,wy,0.018f,0.025f);
+            }
+    }
+    void drawSkyline(){
+        drawBuildingR(-0.96f,-0.02f,0.07f,0.38f,0.60f,0.78f,0.90f);
+        drawBuildingR(-0.87f,-0.02f,0.06f,0.50f,0.54f,0.72f,0.87f);
+        drawBuildingR(-0.78f,-0.02f,0.08f,0.45f,0.50f,0.70f,0.86f);
+        drawBuildingR(-0.45f,-0.02f,0.08f,0.48f,0.49f,0.69f,0.87f);
+        drawBuildingR(0.03f,-0.02f,0.09f,0.45f,0.50f,0.71f,0.86f);
+        drawBuildingR(0.15f,-0.02f,0.07f,0.58f,0.46f,0.67f,0.83f);
+        drawBuildingR(0.25f,-0.02f,0.08f,0.47f,0.53f,0.73f,0.89f);
+        drawBuildingR(0.36f,-0.02f,0.07f,0.40f,0.48f,0.69f,0.86f);
+        drawBuildingR(0.62f,-0.02f,0.09f,0.45f,0.53f,0.73f,0.89f);
+        drawBuildingR(0.74f,-0.02f,0.08f,0.50f,0.46f,0.67f,0.84f);
+        drawBuildingR(0.86f,-0.02f,0.08f,0.40f,0.50f,0.71f,0.87f);
+    }
+    void drawRiver(){
+        if(sceneMode==0) glColor3f(0.18f,0.55f,0.78f);
+        else if(sceneMode==1) glColor3f(0.38f,0.45f,0.65f);
+        else glColor3f(0.08f,0.22f,0.45f);
+        glBegin(GL_QUADS);
+        glVertex2f(-1,-1); glVertex2f(0.05f,-1); glVertex2f(0.33f,-0.02f); glVertex2f(-1,-0.02f);
+        glEnd();
+    }
+    void drawRoad(){
+        glColor3f(0.20f,0.21f,0.23f);
+        glBegin(GL_QUADS);
+        glVertex2f(0.25f,-1); glVertex2f(0.90f,-1); glVertex2f(0.79f,-0.02f); glVertex2f(0.36f,-0.02f);
+        glEnd();
+        glColor3f(1,0.82f,0.04f);
+        for(float y=-0.92f;y<-0.05f;y+=0.16f){
+            float t=(y+1)/0.98f,x=0.56f+t*0.02f;
+            dr(x,y,0.018f,0.08f);
+        }
+    }
+    void drawPlane(float x,float y,float s){
+        glColor3f(0.92f,0.94f,0.97f);
+        del(x,y,0.08f*s,0.022f*s);
+        glColor3f(0.22f,0.55f,0.88f); dr(x-0.07f*s,y+0.005f*s,0.06f*s*2,0.01f*s);
+        glColor3f(0.80f,0.82f,0.85f); dr(x+0.07f*s,y,0.02f*s,0.018f*s);
+    }
+    void drawHelicopter(float x,float y,float s){
+        glColor3f(0.22f,0.60f,0.35f); del(x,y,0.06f*s,0.020f*s);
+        glColor3f(0.18f,0.50f,0.28f); dr(x-0.055f*s,y+0.008f*s,0.11f*s,0.006f*s);
+    }
+    void drawDrone(float x,float y,float s){
+        glColor3f(0.30f,0.32f,0.35f); del(x,y,0.025f*s,0.012f*s);
+        glColor3f(0.42f,0.44f,0.48f);
+        dr(x-0.040f*s,y-0.004f,0.018f*s,0.008f*s); dr(x+0.022f*s,y-0.004f,0.018f*s,0.008f*s);
+    }
+    void drawAirPod(float x,float y,float s){
+        glColor3f(0.55f,0.88f,0.98f); del(x,y,0.065f*s,0.018f*s);
+    }
+    void drawFlyingCar(float x,float y,float s,int dir){
+        glColor3f(0.10f,0.72f,0.95f); del(x,y,0.045f*s,0.014f*s);
+        glColor3f(0.08f,0.60f,0.80f); dr(x-0.04f*s,(dir>0)?y-0.008f:y+0.002f,0.08f*s,0.006f*s);
+    }
+    void drawBoatR(float x,float y,float s){
+        glColor3f(0.95f,0.96f,0.97f);
+        glBegin(GL_TRIANGLE_FAN);
+        glVertex2f(x,y+0.035f*s); glVertex2f(x-0.09f*s,y+0.035f*s);
+        glVertex2f(x-0.11f*s,y); glVertex2f(x+0.11f*s,y); glVertex2f(x+0.09f*s,y+0.035f*s);
+        glEnd();
+        glColor3f(0.78f,0.88f,0.96f); dr(x-0.03f*s,y+0.035f*s,0.06f*s,0.04f*s);
+    }
+    void drawTrafficR(){
+        glColor3f(0.88f,0.12f,0.10f); dci(0.57f,-0.10f,0.020f);
+        glColor3f(0.10f,0.88f,0.14f); dci(0.57f,-0.14f,0.020f);
+        glColor3f(0.90f,0.85f,0.12f); dci(0.57f,-0.18f,0.020f);
+        glColor3f(0.55f,0.57f,0.60f); dr(0.564f,-0.22f,0.012f,0.14f);
+    }
+    void drawTrainR(float x,float y){
+        glColor3f(0.12f,0.62f,0.98f); dr(x,y+0.01f,0.38f,0.01f);
+        glColor3f(0.52f,0.80f,0.95f);
+        for(int i=0;i<7;i++) dr(x+0.025f+i*0.048f,y+0.03f,0.035f,0.02f);
+        glColor3f(0.85f,0.88f,0.92f); dr(x,y-0.01f,0.38f,0.025f);
+    }
+    void drawCrashPlane(float x,float y,float s,int dir){
+        glColor3f(1,0.30f,0.10f);
+        glPushMatrix(); glTranslatef(x,y,0);
+        if(dir<0) glScalef(-1,1,1);
+        del(0,0,0.08f*s,0.022f*s);
+        glColor3f(0.98f,0.55f,0.10f); dr(-0.07f*s,0.005f*s,0.12f*s,0.010f*s);
+        glPopMatrix();
+    }
+    void drawCrashCluster(float x,float y,float sz){
+        glColor3f(1,0.55f,0.10f); dci(x,y,0.04f*sz);
+        glColor3f(0.95f,0.20f,0.05f); dci(x-0.06f*sz,y+0.02f*sz,0.025f*sz);
+        glColor3f(1,0.78f,0.10f); dci(x+0.07f*sz,y+0.03f*sz,0.030f*sz);
+        glColor3f(0.85f,0.85f,0.85f); del(x,y+0.06f*sz,0.08f*sz,0.04f*sz);
+    }
+    void drawRail(){
+        glColor3f(0.76f,0.80f,0.83f);
+        float pillX[]={-0.95f,-0.70f,-0.45f,-0.20f,0.05f};
+        for(int i=0;i<5;i++) dr(pillX[i],-0.32f,0.025f,0.25f);
+        glColor3f(0.84f,0.86f,0.88f); dr(-1,-0.08f,2,0.045f);
+    }
+    void drawTreeR(float x,float y,float s){
+        glColor3f(0.46f,0.27f,0.12f); dr(x-0.008f*s,y,0.016f*s,0.07f*s);
+        glColor3f(0.23f,0.62f,0.18f); dci(x,y+0.10f*s,0.04f*s);
+        dci(x-0.03f*s,y+0.075f*s,0.035f*s); dci(x+0.03f*s,y+0.075f*s,0.035f*s);
+    }
+
+    void render(){
+        if(sceneMode==0) glClearColor(0.60f,0.82f,0.95f,1);
+        else if(sceneMode==1) glClearColor(0.95f,0.50f,0.25f,1);
+        else glClearColor(0.08f,0.10f,0.18f,1);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glLoadIdentity();
+        drawSky(); drawStars(); drawSunR();
+        drawCloudR(-0.65f+cloudMove,0.72f); drawCloudR(-0.15f+cloudMove*0.65f,0.78f);
+        drawCloudR(0.35f+cloudMove*0.45f,0.74f); drawCloudR(0.75f+cloudMove*0.35f,0.80f);
+        drawAirPod(podX,0.54f,0.90f);
+        drawHelicopter(heliX,0.60f,0.85f); drawPlane(planeX,0.78f,0.85f); drawDrone(droneX,0.68f,0.80f);
+        if(crashActive){
+            if(!planeCrash){ drawCrashPlane(crashPlane1X,0.88f,0.85f,1); drawCrashPlane(crashPlane2X,0.88f,0.85f,-1); }
+            else drawCrashCluster(0,0.88f,crashSmokeSize);
+        }
+        drawFlyingCar(flyingCar1X,0.44f,0.95f,1); drawFlyingCar(flyingCar2X,0.37f,0.85f,-1);
+        drawSkyline(); drawGround(); drawRiver();
+        drawBoatR(boat1X,-0.82f,0.75f); drawBoatR(boat2X,-0.93f,0.65f);
+        drawBoatR(boat3X,-0.65f,0.55f); drawBoatR(boat4X,-0.78f,1);
+        drawRoad(); drawTrafficR(); drawRail(); drawTrainR(trainX,-0.025f);
+        drawTreeR(0.90f,-0.58f,0.85f); drawTreeR(0.96f,-0.72f,0.95f);
+
+        glColor3f(0.2f,0.2f,0.5f);
+        glRasterPos2f(-0.95f,-0.92f);
+        const char* hint="C=Day/Afternoon/Night  B=Plane Crash  ESC=Back";
+        for(const char* c=hint;*c;c++) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12,*c);
+        glutSwapBuffers();
+    }
+    void update(int){
+        planeX+=0.006f; if(planeX>1.25f) planeX=-1.25f;
+        heliX+=0.003f;  if(heliX>1.25f)  heliX=-1.25f;
+        carMove+=0.006f; if(carMove>0.95f) carMove=0;
+        cloudMove+=0.001f; if(cloudMove>1.4f) cloudMove=-1;
+        flyingCar1X+=0.004f; if(flyingCar1X>1.25f) flyingCar1X=-1.25f;
+        flyingCar2X-=0.0035f; if(flyingCar2X<-1.25f) flyingCar2X=1.25f;
+        droneX+=0.0025f; if(droneX>1.25f) droneX=-1.25f;
+        podX+=0.005f; if(podX>1.25f) podX=-1.25f;
+        if(crashActive){
+            if(!planeCrash){
+                crashPlane1X+=0.006f; crashPlane2X-=0.006f;
+                if(crashPlane1X>=-0.03f&&crashPlane2X<=0.03f){ planeCrash=true; crashSmokeSize=1; }
+            } else {
+                crashSmokeSize+=0.01f;
+                if(crashSmokeSize>2.2f){crashActive=false;planeCrash=false;crashPlane1X=-1.25f;crashPlane2X=1.25f;crashSmokeSize=0;}
+            }
+        }
+        if(!boat1Stop){boat1X+=0.0010f;if(boat1X>=0.05f){boat1X=0.05f;boat1Stop=true;}}
+        if(!boat2Stop){boat2X+=0.0009f;if(boat2X>=0.00f){boat2X=0.00f;boat2Stop=true;}}
+        if(!boat3Stop){boat3X+=0.0008f;if(boat3X>=0.08f){boat3X=0.08f;boat3Stop=true;}}
+        if(!boat4Stop){boat4X+=0.0007f;if(boat4X>=-0.03f){boat4X=-0.03f;boat4Stop=true;}}
+        trainX+=0.012f; if(trainX>1.20f) trainX=-1.30f;
+        glutPostRedisplay();
+        glutTimerFunc(16,update,0);
+    }
+    void keyboard(unsigned char key){
+        if(key=='c'||key=='C'){ sceneMode++; if(sceneMode>2) sceneMode=0; }
+        if(key=='b'||key=='B'){ crashActive=true; planeCrash=false; crashPlane1X=-1.25f; crashPlane2X=1.25f; crashSmokeSize=0; }
+    }
+    void mouseFunc(int button,int state,int,int){
+        if(button==GLUT_LEFT_BUTTON&&state==GLUT_DOWN){ sceneMode++; if(sceneMode>2) sceneMode=0; glutPostRedisplay(); }
+    }
+    void reset(){
+        sceneMode=0; planeX=-1.25f; heliX=-1.25f; carMove=0; cloudMove=0;
+        trainX=-1.30f; flyingCar1X=-1.20f; flyingCar2X=1.20f; droneX=-1.20f; podX=-1.25f;
+        crashActive=false; planeCrash=false;
+        boat1X=-1.10f; boat2X=-1.20f; boat3X=-1.30f; boat4X=-1.40f;
+        boat1Stop=false; boat2Stop=false; boat3Stop=false; boat4Stop=false;
+    }
+} // namespace SceneRahul
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  GLUT CALLBACKS  (master router)
+// ─────────────────────────────────────────────────────────────────────────────
+void displayCB(){
+    switch(g_scene){
+        case 0: Cover::render(); break;
+        case 1: Instructions::render(); break;
+        case 2: SceneAfia::render(); break;
+        case 3: SceneSayeed::render(); break;
+        case 4: SceneAbrar::render(); break;
+        case 5: SceneRafid::render(); break;
+        case 6: SceneRahul::render(); break;
+    }
+}
+
+void idleCB(){
+    switch(g_scene){
+        case 2: SceneAfia::update(); glutPostRedisplay(); break;
+        case 3: SceneSayeed::update(); glutPostRedisplay(); break;
+        case 4: SceneAbrar::update(); glutPostRedisplay(); break;
+        case 5: SceneRafid::update(); glutPostRedisplay(); break;
+        default: break;
+    }
+}
+
+void switchScene(int s){
+    g_scene=s;
+    // reset scene state when entering
+    if(s==2) SceneAfia::reset();
+    else if(s==3){ SceneSayeed::reset(); SceneSayeed::initRain(); }
+    else if(s==4) SceneAbrar::reset();
+    else if(s==5) SceneRafid::reset();
+    else if(s==6) SceneRahul::reset();
+    glutPostRedisplay();
+}
+
+// FULL MERGE ADDITION – Timer callback for automatic scene cycling
+void fullMergeSwitch(int value) {
+    if (!g_fullMergeActive) return;          // cancelled
+    g_mergeIdx++;
+    if (g_mergeIdx < 5) {
+        switchScene(2 + g_mergeIdx);          // show next scene
+        glutTimerFunc(60000, fullMergeSwitch, 0); // 60 sec delay (was 5000)
+    } else {
+        // finished all scenes – return to instructions
+        g_fullMergeActive = 0;
+        switchScene(1);
+    }
+}
+
+void keyboardCB(unsigned char key,int x,int y){
+    // MODIFIED: During full merge, only ESC cancels; other keys are passed to scene.
+    if (g_fullMergeActive && g_scene >= 2) {
+        if (key == 27) {               // ESC key stops the merge
+            g_fullMergeActive = 0;
+            switchScene(1);
+            return;
+        }
+        // If 'f' or 'F' is pressed during merge, also stop the merge.
+        if (key == 'f' || key == 'F') {
+            g_fullMergeActive = 0;
+            switchScene(1);
+            return;
+        }
+        // Otherwise, do not cancel – let the scene handle the key.
+        // (We will still process the key via per‑scene code below)
+    }
+
+    // ESC navigation (works also during merge, but we already handled ESC above)
+    if(key==27){
+        if(g_scene==0) exit(0);
+        else if(g_scene==1){ g_scene=0; glutPostRedisplay(); return; }
+        else { g_scene=1; glutPostRedisplay(); return; }
+    }
+    // Cover: ENTER or SPACE -> instructions
+    if(g_scene==0){
+        if(key==13||key==' '){ g_scene=1; glutPostRedisplay(); }
+        return;
+    }
+    // Instructions: number keys & F
+    if(g_scene==1){
+        if(key=='1') switchScene(2);
+        else if(key=='2') switchScene(3);
+        else if(key=='3') switchScene(4);
+        else if(key=='4') switchScene(5);
+        else if(key=='5') switchScene(6);
+        // FULL MERGE ADDITION: start automatic cycling when F pressed
+        else if(key=='f'||key=='F') {
+            if (!g_fullMergeActive) {
+                g_fullMergeActive = 1;
+                g_mergeIdx = 0;
+                switchScene(2);                     // start with scene 2
+                glutTimerFunc(60000, fullMergeSwitch, 0); // wait 60 sec then next
+            }
+        }
+        return;
+    }
+    // Per-scene keyboard
+    if(g_scene==2) SceneAfia::keyboard(key);
+    else if(g_scene==3) SceneSayeed::keyboard(key);
+    else if(g_scene==4) SceneAbrar::keyboard(key,x,y);
+    else if(g_scene==5) SceneRafid::keyboard(key,x,y);
+    else if(g_scene==6) SceneRahul::keyboard(key);
+    glutPostRedisplay();
+}
+
+void specialCB(int key,int x,int y){
+    if(g_scene==4) SceneAbrar::specialKeys(key,x,y);
+    else if(g_scene==5) SceneRafid::specialKeys(key,x,y);
+}
+
+void mouseCB(int button,int state,int x,int y){
+    // MODIFIED: During full merge, pass mouse events to scene (no cancellation).
+    // (only ESC key cancels, not mouse)
+    if(g_scene==4) SceneAbrar::mouseFunc(button,state,x,y);
+    else if(g_scene==5) SceneRafid::mouseFunc(button,state,x,y);
+    else if(g_scene==6) SceneRahul::mouseFunc(button,state,x,y);
+    glutPostRedisplay();
+}
+
+void reshapeCB(int w,int h){
+    if(!h) h=1;
+    g_winW=w; g_winH=h;
+    Instructions::scaleX=(float)w/1100.0f;
+    Instructions::scaleY=(float)h/650.0f;
+    SceneAbrar::g_winWidth=w; SceneAbrar::g_winHeight=h;
+    glViewport(0,0,w,h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(-1,1,-1,1);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glutPostRedisplay();
+}
+
+// Rahul's timer (always ticking when scene 6 is active, or just run continuously)
+void timerCB(int v){
+    if(g_scene==6) SceneRahul::update(0);
+    else glutTimerFunc(16,timerCB,0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  MAIN
+// ─────────────────────────────────────────────────────────────────────────────
+int main(int argc, char** argv){
+    srand((unsigned)time(NULL));
+
+    glutInit(&argc,argv);
+    glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB);
+    glutInitWindowSize(1100,650);
+    glutInitWindowPosition(80,40);
+    glutCreateWindow("CG Merged Project - AIUB");
+
+    glClearColor(1,1,1,1);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);
+
+    // Pre-init scenes
+    SceneSayeed::initRain();
+    SceneAbrar::initSmoke();
+    SceneAbrar::initFlock();
+    SceneAbrar::initPeople();
+    SceneRafid::init();
+
+    glutDisplayFunc(displayCB);
+    glutReshapeFunc(reshapeCB);
+    glutIdleFunc(idleCB);
+    glutKeyboardFunc(keyboardCB);
+    glutSpecialFunc(specialCB);
+    glutMouseFunc(mouseCB);
+    glutTimerFunc(16,timerCB,0);
+
+    glutMainLoop();
+    return 0;
+}
