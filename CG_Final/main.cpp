@@ -596,4 +596,305 @@ namespace SceneSayeed {
             }
         }
     }
+    void keyboard(unsigned char key){
+        if(key=='p'||key=='P') cloudsPaused=!cloudsPaused;
+        if(key=='n'||key=='N') isNight=!isNight;
+        if(key=='r'||key=='R') rainEnabled=!rainEnabled;
+        if(key=='m'||key=='M'){
+            musicEnabled=!musicEnabled;
+#ifdef _WIN32
+            if(musicEnabled) PlaySound("bg.wav",NULL,SND_FILENAME|SND_ASYNC|SND_LOOP);
+            else PlaySound(NULL,0,0);
+#endif
+        }
+    }
+    void reset(){ cloudsPaused=false; isNight=false; rainEnabled=false; musicEnabled=false; }
+} // namespace SceneSayeed
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  SCENE 4 – Abrar Adnan Pranjal (Train Station)
+// ═══════════════════════════════════════════════════════════════════════════════
+namespace SceneAbrar {
+#define AB_MAX_SMOKE 300
+#define AB_NUM_PEOPLE 9
+#define AB_FLOCK 7
+
+    bool g_soundMuted=false, g_paused=false;
+    int  g_signal=1, g_frame=0, g_winWidth=1100, g_winHeight=650;
+    int  g_signalFlash=0;
+    float g_flashIntensity=0;
+    float g_trainX=-0.3f, g_wheelAngle=0, g_pistonPhase=0, g_sunAngle=-0.3f;
+    float g_cloudX[6]={-0.70f,0,0.55f,-0.20f,0.80f,-0.90f};
+    float g_cloudY[6]={0.78f,0.88f,0.82f,0.92f,0.75f,0.86f};
+    float g_cloudSp[6]={0.00008f,0.00006f,0.00010f,0.00005f,0.00009f,0.00007f};
+    float g_trainSpeed=0.0003f;
+
+    struct ABSmoke{ float x,y,vx,vy,r,alpha; bool white,active; };
+    ABSmoke g_smoke[AB_MAX_SMOKE];
+
+    struct ABPerson{
+        float baseX,baseY,scale,sr,sg,sb,pr,pg,pb,skr,skg,skb;
+        bool wave,hat; float hr,hg,hb,offsetX,dir,speed;
+    };
+    ABPerson g_people[AB_NUM_PEOPLE]={
+        {-0.72f,-0.370f,0.90f,0.90f,0.90f,0.88f,0.22f,0.18f,0.12f,0.82f,0.60f,0.42f,false,false,0,0,0,0,1,0.0004f},
+        {-0.54f,-0.368f,0.92f,0.88f,0.62f,0.12f,0.24f,0.18f,0.06f,0.95f,0.74f,0.50f,true, false,0,0,0,0,-1,0.0005f},
+        {-0.44f,-0.366f,0.90f,0.12f,0.26f,0.65f,0.08f,0.12f,0.32f,0.80f,0.58f,0.40f,false,false,0,0,0,0,1,0.00045f},
+        {0.22f,-0.370f,0.92f,0.10f,0.10f,0.18f,0.06f,0.06f,0.12f,0.80f,0.56f,0.38f,false,false,0,0,0,0,-1,0.00055f},
+        {0.32f,-0.368f,0.90f,0.88f,0.78f,0.22f,0.10f,0.28f,0.14f,0.84f,0.58f,0.38f,true, false,0,0,0,0,1,0.00038f},
+        {0.62f,-0.370f,0.90f,0.74f,0.24f,0.10f,0.20f,0.12f,0.05f,0.85f,0.64f,0.44f,false,false,0,0,0,0,-1,0.00048f},
+        {-0.14f,-0.620f,1.08f,0.36f,0.12f,0.62f,0.14f,0.06f,0.36f,0.82f,0.58f,0.40f,true, false,0,0,0,0,1,0.00042f},
+        {-0.02f,-0.622f,1.05f,0.88f,0.65f,0.12f,0.22f,0.16f,0.05f,0.95f,0.74f,0.50f,false,false,0,0,0,0,-1,0.0005f},
+        {0.09f,-0.620f,1.05f,0.22f,0.36f,0.18f,0.10f,0.16f,0.08f,0.76f,0.48f,0.32f,true, false,0,0,0,0,1,0.00044f},
+    };
+    struct ABBird{ float x,y,speed,r,g,b; };
+    ABBird g_flock[AB_FLOCK];
+
+    // ── drawing helpers ──
+    void qd(float x1,float y1,float x2,float y2){
+        glBegin(GL_QUADS);
+        glVertex2f(x1,y1); glVertex2f(x2,y1); glVertex2f(x2,y2); glVertex2f(x1,y2);
+        glEnd();
+    }
+    void fc(float cx,float cy,float r,int n){
+        float tp=2*PI;
+        glBegin(GL_TRIANGLE_FAN); glVertex2f(cx,cy);
+        for(int i=0;i<=n;i++) glVertex2f(cx+r*cosf(i*tp/n),cy+r*sinf(i*tp/n));
+        glEnd();
+    }
+    void oc(float cx,float cy,float r,int n,float lw){
+        float tp=2*PI; glLineWidth(lw);
+        glBegin(GL_LINE_LOOP);
+        for(int i=0;i<=n;i++) glVertex2f(cx+r*cosf(i*tp/n),cy+r*sinf(i*tp/n));
+        glEnd();
+    }
+    void fe(float cx,float cy,float rx,float ry,int n){
+        float tp=2*PI;
+        glBegin(GL_TRIANGLE_FAN); glVertex2f(cx,cy);
+        for(int i=0;i<=n;i++) glVertex2f(cx+rx*cosf(i*tp/n),cy+ry*sinf(i*tp/n));
+        glEnd();
+    }
+
+    void initSmoke(){ for(int i=0;i<AB_MAX_SMOKE;i++) g_smoke[i].active=false; }
+    void spawnSmoke(float bx,float by,bool white){
+        for(int i=0;i<AB_MAX_SMOKE;i++){
+            if(!g_smoke[i].active){
+                float vx=((float)rand()/RAND_MAX-0.45f)*0.0006f;
+                float vy=0.0020f+(float)rand()/RAND_MAX*0.003f;
+                float rv=0.022f+(float)rand()/RAND_MAX*0.016f;
+                g_smoke[i]={bx,by,vx,vy,rv,0.80f,white,true}; return;
+            }
+        }
+    }
+    void updateSmoke(){
+        for(int i=0;i<AB_MAX_SMOKE;i++){
+            if(!g_smoke[i].active) continue;
+            g_smoke[i].x+=g_smoke[i].vx+0.0001f;
+            g_smoke[i].y+=g_smoke[i].vy*0.6f;
+            g_smoke[i].r+=0.0005f; g_smoke[i].alpha-=0.003f;
+            if(g_smoke[i].alpha<=0) g_smoke[i].active=false;
+        }
+    }
+    void drawSmoke(){
+        glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        for(int i=0;i<AB_MAX_SMOKE;i++){
+            if(!g_smoke[i].active) continue;
+            if(g_smoke[i].white) glColor4f(0.92f,0.92f,0.92f,g_smoke[i].alpha);
+            else                  glColor4f(0.32f,0.32f,0.34f,g_smoke[i].alpha);
+            fc(g_smoke[i].x,g_smoke[i].y,g_smoke[i].r,20);
+        }
+        glDisable(GL_BLEND);
+    }
+    void drawBackground(){
+        glBegin(GL_QUADS);
+        glColor3f(0.42f,0.72f,0.95f); glVertex2f(-1,1); glVertex2f(1,1);
+        glColor3f(0.62f,0.86f,0.98f); glVertex2f(1,-1); glVertex2f(-1,-1);
+        glEnd();
+        glColor3f(0.76f,0.42f,0.22f); qd(-1,-1,1,-0.10f);
+        glColor3f(0.80f,0.46f,0.25f); qd(-1,-0.55f,1,-0.38f);
+        glColor3f(0.58f,0.28f,0.12f); qd(-1,-0.50f,1,-0.42f);
+        glColor3f(0.72f,0.38f,0.20f); qd(-1,-1,1,-0.50f);
+        glColor3f(0.64f,0.32f,0.16f); qd(-1,-1,1,-0.72f);
+    }
+    void drawSunAB(){
+        float sx=cosf(g_sunAngle)*0.78f,sy=0.65f+sinf(g_sunAngle)*0.30f;
+        glColor3f(1,0.92f,0.25f); fc(sx,sy,0.062f,32);
+        glColor3f(1,0.97f,0.70f); fc(sx,sy,0.045f,32);
+    }
+    void drawCloud(float cx,float cy){
+        glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        glColor4f(1,1,1,0.95f);
+        fe(cx-0.09f,cy,0.072f,0.048f,20); fe(cx+0.09f,cy,0.072f,0.048f,20);
+        fe(cx,cy,0.080f,0.052f,20); fe(cx-0.06f,cy+0.045f,0.062f,0.050f,20);
+        fe(cx+0.05f,cy+0.050f,0.058f,0.048f,20); fe(cx,cy+0.065f,0.055f,0.045f,20);
+        glDisable(GL_BLEND);
+    }
+    void drawTreeAB(float tx,float ty,float s){
+        glColor3f(0.38f,0.22f,0.09f); qd(tx-0.01f*s,ty,tx+0.01f*s,ty+0.16f*s);
+        glColor3f(0.18f,0.42f,0.14f);
+        fc(tx,ty+0.17f*s,0.065f*s,22); fc(tx-0.04f*s,ty+0.14f*s,0.055f*s,20);
+        fc(tx+0.04f*s,ty+0.15f*s,0.052f*s,20); fc(tx,ty+0.22f*s,0.048f*s,18);
+    }
+    void drawBuilding(float x,float y,float w,float h,float r,float g,float b,float dr,float dg,float db,int wins,int winRows,bool arch,bool gable){
+        glColor3f(r,g,b); qd(x,y,x+w,y+h);
+        glColor3f(dr*0.85f,dg*0.85f,db*0.85f); qd(x-0.005f,y+h,x+w+0.005f,y+h+0.022f);
+        if(gable){
+            glColor3f(dr*0.70f,dg*0.70f,db*0.70f);
+            glBegin(GL_TRIANGLES);
+            glVertex2f(x,y+h+0.018f); glVertex2f(x+w*0.5f,y+h+0.065f); glVertex2f(x+w,y+h+0.018f);
+            glEnd();
+        }
+        if(arch){
+            float ax=x+w*0.22f,aw=0.065f;
+            glColor3f(dr*0.55f,dg*0.55f,db*0.55f);
+            qd(ax,y,ax+aw,y+0.10f); fc(ax+aw*0.5f,y+0.10f,aw*0.5f,16);
+            ax=x+w*0.55f; qd(ax,y,ax+aw,y+0.10f); fc(ax+aw*0.5f,y+0.10f,aw*0.5f,16);
+        }
+        float ww=0.032f,wh=0.042f,gap=(w-wins*ww)/(wins+1);
+        float winStartY=arch?0.16f:0.05f;
+        for(int row=0;row<winRows;row++){
+            float wy=y+winStartY+row*(wh+0.038f);
+            for(int i=0;i<wins;i++){
+                float wx=x+gap+i*(ww+gap);
+                glColor3f(dr*0.55f,dg*0.50f,db*0.45f); qd(wx-0.003f,wy-0.003f,wx+ww+0.003f,wy+wh+0.003f);
+                glColor3f(0.55f,0.42f,0.22f); qd(wx,wy,wx+ww,wy+wh);
+            }
+        }
+    }
+    void drawFactory(float x,float y){
+        float w=0.18f,h=0.52f;
+        glColor3f(0.52f,0.22f,0.10f); qd(x,y,x+w,y+h);
+        glColor3f(0.38f,0.14f,0.05f); qd(x-0.004f,y+h,x+w+0.004f,y+h+0.020f);
+        float aww=0.045f;
+        for(int i=0;i<3;i++){
+            float ax=x+0.022f+i*(aww+0.012f),ay=y+0.08f;
+            glColor3f(0.28f,0.08f,0.03f); qd(ax,ay,ax+aww,ay+0.14f); fc(ax+aww*0.5f,ay+0.14f,aww*0.5f,14);
+            glColor3f(0.50f,0.38f,0.18f); qd(ax+0.003f,ay,ax+aww-0.003f,ay+0.14f);
+        }
+        float chx=x+w*0.70f,chH=0.50f;
+        glColor3f(0.40f,0.18f,0.07f); qd(chx,y+h,chx+0.038f,y+h+chH);
+        glColor3f(0.18f,0.08f,0.03f); qd(chx-0.008f,y+h+chH-0.012f,chx+0.046f,y+h+chH+0.008f);
+    }
+    void drawStationHouse(float x,float y){
+        float w=0.16f,h=0.36f;
+        glColor3f(0.88f,0.72f,0.30f); qd(x,y,x+w,y+h);
+        glColor3f(0.60f,0.48f,0.20f); qd(x,y+h*0.68f,x+w,y+h);
+        glColor3f(0.35f,0.28f,0.18f);
+        glBegin(GL_TRIANGLES); glVertex2f(x-0.008f,y+h); glVertex2f(x+w*0.5f,y+h+0.06f); glVertex2f(x+w+0.008f,y+h); glEnd();
+        glColor3f(0.45f,0.35f,0.15f);
+        qd(x+0.02f,y+0.10f,x+0.07f,y+0.18f); qd(x+0.09f,y+0.10f,x+0.14f,y+0.18f);
+        glColor3f(0.35f,0.25f,0.10f);
+        qd(x+w*0.38f,y,x+w*0.38f+0.045f,y+0.12f); fc(x+w*0.38f+0.0225f,y+0.12f,0.0225f,14);
+    }
+    void drawLampAB(float x,float y){
+        glColor3f(0.48f,0.48f,0.50f); qd(x-0.004f,y,x+0.004f,y+0.18f);
+        glLineWidth(2.5f); glColor3f(0.45f,0.45f,0.48f);
+        glBegin(GL_LINE_STRIP);
+        for(int i=0;i<=10;i++){ float a=PI+i*PI*0.5f/10; glVertex2f(x+0.020f*cosf(a),y+0.18f+0.020f*sinf(a)); }
+        glEnd();
+        glColor3f(1,0.95f,0.60f); fc(x+0.020f,y+0.200f,0.014f,14);
+    }
+    void drawSignalAB(){
+        float sx=0.15f,sy=-0.22f;
+        glColor3f(0.35f,0.35f,0.38f); qd(sx-0.007f,sy-0.30f,sx+0.007f,-0.42f);
+        glColor3f(0.12f,0.12f,0.14f); qd(sx-0.024f,sy,sx+0.024f,sy+0.090f);
+        if(g_signalFlash>0){
+            glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+            glColor4f(1,1,0.8f,0.6f*g_flashIntensity); fc(sx,sy+0.052f,0.045f,20);
+            glDisable(GL_BLEND);
+            g_signalFlash--; g_flashIntensity=g_signalFlash/15.0f;
+        }
+        if(g_signal==0) glColor3f(1,0.10f,0.10f); else glColor3f(0.18f,0,0);
+        fc(sx,sy+0.070f,0.015f,14);
+        if(g_signal==1) glColor3f(0.10f,1,0.22f); else glColor3f(0,0.18f,0.04f);
+        fc(sx,sy+0.035f,0.015f,14);
+        glColor3f(0.30f,0.30f,0.32f); qd(sx-0.018f,sy-0.30f,sx+0.018f,sy-0.26f);
+    }
+    void drawWheel(float cx,float cy,float r){
+        glColor3f(0.10f,0.10f,0.12f); fc(cx,cy,r,32);
+        glColor3f(0.38f,0.38f,0.40f); oc(cx,cy,r,32,2.5f);
+        glColor3f(0.50f,0.52f,0.55f); fc(cx,cy,r*0.70f,28);
+        glPushMatrix(); glTranslatef(cx,cy,0); glRotatef(g_wheelAngle,0,0,1);
+        glColor3f(0.25f,0.26f,0.28f); glLineWidth(2.5f); glBegin(GL_LINES);
+        for(int s=0;s<8;s++){ float a=s*PI/4; glVertex2f(r*0.15f*cosf(a),r*0.15f*sinf(a)); glVertex2f(r*0.65f*cosf(a),r*0.65f*sinf(a)); }
+        glEnd(); glPopMatrix();
+        glColor3f(0.12f,0.12f,0.14f); fc(cx,cy,r*0.16f,12);
+    }
+    void drawTracks(){
+        glColor3f(0.42f,0.32f,0.18f); qd(-1,-0.480f,1,-0.415f);
+        glColor3f(0.55f,0.55f,0.58f); glLineWidth(3.5f);
+        glBegin(GL_LINES);
+        glVertex2f(-1,-0.422f); glVertex2f(1,-0.422f);
+        glVertex2f(-1,-0.462f); glVertex2f(1,-0.462f);
+        glEnd();
+        glLineWidth(5.5f); glColor3f(0.40f,0.25f,0.11f);
+        glBegin(GL_LINES);
+        for(float sx=-1;sx<1;sx+=0.065f){ glVertex2f(sx,-0.416f); glVertex2f(sx,-0.470f); }
+        glEnd();
+    }
+    void drawTrainWheels(){
+        float tx=g_trainX;
+        drawWheel(tx+0.79f,-0.450f,0.055f); drawWheel(tx+0.94f,-0.450f,0.055f);
+        drawWheel(tx+0.46f,-0.448f,0.060f); drawWheel(tx+0.64f,-0.448f,0.060f);
+        drawWheel(tx+0.23f,-0.448f,0.055f); drawWheel(tx+0.35f,-0.448f,0.055f);
+        float bx=tx-0.30f;
+        drawWheel(bx+0.016f,-0.450f,0.078f); drawWheel(bx+0.122f,-0.450f,0.078f);
+        drawWheel(bx+0.218f,-0.450f,0.078f); drawWheel(bx-0.005f,-0.450f,0.055f);
+        drawWheel(bx+0.304f,-0.450f,0.055f);
+    }
+    void drawPiston(float tx){
+        float ry=-0.336f;
+        glColor3f(0.60f,0.28f,0.08f); qd(tx-0.22f,ry-0.005f,tx+0.09f,ry+0.015f);
+        float pl=0.07f+sinf(g_pistonPhase)*0.028f;
+        glColor3f(0.45f,0.45f,0.48f); qd(tx-0.26f-pl,ry-0.005f,tx-0.22f,ry+0.016f);
+        glColor3f(0.28f,0.28f,0.30f); qd(tx-0.25f,ry-0.015f,tx-0.18f,ry+0.025f);
+    }
+    void drawTrain(){
+        float tx=g_trainX;
+        // freight car
+        glColor3f(0.65f,0.18f,0.06f); qd(tx+0.73f,-0.38f,tx+1.03f,-0.38f+0.25f);
+        glColor3f(0.38f,0.40f,0.42f); qd(tx+0.725f,-0.38f+0.25f,tx+1.035f,-0.38f+0.275f);
+        // passenger car
+        glColor3f(0.72f,0.22f,0.07f); qd(tx+0.39f,-0.37f,tx+0.73f,-0.37f+0.26f);
+        glColor3f(0.36f,0.38f,0.42f); qd(tx+0.385f,-0.37f+0.26f,tx+0.735f,-0.37f+0.288f);
+        for(int w=0;w<6;w++){
+            float wx=tx+0.407f+w*0.050f,wy=-0.37f+0.045f;
+            glColor3f(0.62f,0.76f,0.88f); qd(wx,wy,wx+0.038f,wy+0.075f);
+        }
+        // tender
+        glColor3f(0.14f,0.14f,0.17f); qd(tx+0.17f,-0.35f,tx+0.39f,-0.14f);
+        // locomotive
+        glColor3f(0.65f,0.20f,0.06f); qd(tx-0.04f,-0.36f,tx+0.17f,-0.09f);
+        glColor3f(0.25f,0.26f,0.30f); qd(tx-0.04f,-0.09f,tx+0.17f,-0.060f);
+        glColor3f(0.18f,0.32f,0.50f); qd(tx+0.02f,-0.30f,tx+0.12f,-0.14f);
+        float bx=tx-0.30f,by=-0.285f,brad=0.105f;
+        glColor3f(0.12f,0.12f,0.15f); qd(bx,by-brad,bx+0.32f,by+brad);
+        glColor3f(0.10f,0.10f,0.13f); fc(bx,by,brad+0.005f,32);
+        float skx=bx+0.064f,sky=by+brad;
+        glColor3f(0.10f,0.10f,0.12f);
+        qd(skx-0.022f,sky,skx+0.022f,sky+0.075f); qd(skx-0.035f,sky+0.062f,skx+0.035f,sky+0.085f);
+        fc(skx,sky+0.080f,0.038f,22);
+        glColor3f(0.72f,0.12f,0.04f);
+        glBegin(GL_TRIANGLES);
+        glVertex2f(bx-0.005f,-0.360f); glVertex2f(bx-0.095f,-0.435f); glVertex2f(bx+0.015f,-0.360f);
+        glEnd();
+        glColor3f(0.42f,0.20f,0.07f); qd(bx-0.008f,-0.370f,bx+0.49f,-0.355f);
+        drawPiston(tx);
+    }
+    void drawOnePerson(const ABPerson& p){
+        float s=p.scale;
+        glColor3f(0.10f,0.07f,0.02f);
+        fe(-0.014f*s,-0.068f*s,0.014f*s,0.007f*s,10);
+        fe(0.014f*s,-0.068f*s,0.014f*s,0.007f*s,10);
+        glColor3f(p.pr,p.pg,p.pb);
+        qd(-0.020f*s,-0.065f*s,-0.005f*s,0.018f*s);
+        qd(0.005f*s,-0.065f*s,0.020f*s,0.018f*s);
+        glColor3f(p.sr,p.sg,p.sb);
+        glBegin(GL_QUADS);
+        glVertex2f(-0.024f*s,0.018f*s); glVertex2f(0.024f*s,0.018f*s);
+        glVertex2f(0.026f*s,0.090f*s);  glVertex2f(-0.026f*s,0.090f*s);
+        glEnd();
+        glColor3f(p.skr,p.skg,p.skb);
+        fc(0,0.128f*s,0.030f*s,20);
+    }
 
