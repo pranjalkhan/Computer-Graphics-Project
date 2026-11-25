@@ -297,4 +297,303 @@ namespace SceneAfia {
         glEnd(); glLineWidth(1);
         drawFilledCircle(x,y,0.048f,1,0.78f,0);
     }
-    
+    void drawPalm(float x,float y,float s,float ph){
+        glColor3f(0.45f,0.28f,0.08f); glLineWidth(3);
+        glBegin(GL_LINE_STRIP);
+        glVertex2f(x,y); glVertex2f(x+0.01f*s,y+0.12f*s);
+        glVertex2f(x+0.02f*s,y+0.24f*s); glVertex2f(x+0.01f*s,y+0.36f*s);
+        glEnd(); glLineWidth(1);
+        float tx=x+0.01f*s,ty=y+0.36f*s;
+        glPushMatrix(); glTranslatef(tx,ty,0);
+        glRotatef(sinf(animTime*2+ph)*6,0,0,1);
+        float la[][4]={{0,0.10f,0.10f,0.04f},{-0.10f,0.07f,-0.04f,0.04f},
+                       {0.07f,0.08f,0.12f,-0.02f},{-0.08f,0.05f,-0.12f,-0.02f},{0,0.06f,0,-0.06f}};
+        for(int i=0;i<5;i++) drawTri(0,0,la[i][0]*s,la[i][1]*s,la[i][2]*s,la[i][3]*s,0.15f,0.60f,0.10f);
+        glPopMatrix();
+    }
+    void drawHut(float x,float y,float w,float h){
+        drawRect(x,y,x+w,y+h,0.60f,0.35f,0.12f);
+        drawTri(x-0.01f,y+h,x+w+0.01f,y+h,x+w*0.5f,y+h+0.08f,0.85f,0.70f,0.15f);
+    }
+    void drawMainBuilding(){
+        float bx=-0.12f,bw=0.26f,bBot=-0.05f,bTop=0.38f;
+        drawRect(bx,bBot,bx+bw,bTop,0.72f,0.28f,0.10f);
+        float wx[]={-0.07f,0.03f};
+        for(int i=0;i<2;i++){
+            drawRect(wx[i],bBot+0.08f,wx[i]+0.05f,bBot+0.18f,0.28f,0.10f,0.03f);
+            drawFilledCircle(wx[i]+0.025f,bBot+0.18f,0.025f,0.28f,0.10f,0.03f);
+            drawRect(wx[i],bBot+0.22f,wx[i]+0.05f,bBot+0.30f,0.28f,0.10f,0.03f);
+            drawFilledCircle(wx[i]+0.025f,bBot+0.30f,0.025f,0.28f,0.10f,0.03f);
+        }
+        drawRect(-0.022f,bBot,0.022f,bBot+0.10f,0.10f,0.35f,0.50f);
+        drawRect(-0.06f,bTop,0.06f,bTop+0.04f,0.88f,0.75f,0.60f);
+        drawFilledCircle(0,bTop+0.04f,0.09f,0.72f,0.28f,0.10f);
+        drawFilledCircle(0,bTop+0.135f,0.015f,0.55f,0.20f,0.08f);
+    }
+    void drawBoat(float cx,float cy,float s,float sr,float sg,float sb,float hr,float hg,float hb){
+        glColor3f(hr,hg,hb);
+        glBegin(GL_POLYGON);
+        glVertex2f(cx-0.12f*s,cy); glVertex2f(cx+0.12f*s,cy);
+        glVertex2f(cx+0.09f*s,cy-0.04f*s); glVertex2f(cx-0.09f*s,cy-0.04f*s);
+        glEnd();
+        glColor3f(0.40f,0.25f,0.05f); glLineWidth(2);
+        glBegin(GL_LINES); glVertex2f(cx-0.01f*s,cy); glVertex2f(cx-0.01f*s,cy+0.22f*s); glEnd();
+        glLineWidth(1);
+        drawTri(cx-0.01f*s,cy+0.22f*s,cx-0.01f*s,cy+0.03f*s,cx+0.12f*s,cy+0.10f*s,sr,sg,sb);
+    }
+    void drawBush(float x,float y,float s){
+        drawFilledCircle(x,y,0.05f*s,0.18f,0.55f,0.12f);
+        drawFilledCircle(x+0.04f*s,y+0.01f*s,0.04f*s,0.22f,0.60f,0.15f);
+        drawFilledCircle(x-0.04f*s,y+0.01f*s,0.035f*s,0.15f,0.50f,0.10f);
+    }
+    void drawPerson(float x,float y,float r,float g,float b){
+        drawFilledCircle(x,y+0.055f,0.018f,0.85f,0.65f,0.45f);
+        glColor3f(r,g,b); glLineWidth(2);
+        glBegin(GL_LINES);
+        glVertex2f(x,y+0.037f); glVertex2f(x,y-0.010f);
+        glVertex2f(x-0.018f,y+0.018f); glVertex2f(x+0.018f,y+0.018f);
+        glVertex2f(x,y-0.010f); glVertex2f(x-0.014f,y-0.038f);
+        glVertex2f(x,y-0.010f); glVertex2f(x+0.014f,y-0.038f);
+        glEnd(); glLineWidth(1);
+    }
+    void drawBird(float x,float y){
+        glColor3f(0.15f,0.15f,0.15f); glLineWidth(2);
+        float fl=sinf(animTime*10)*0.03f;
+        glBegin(GL_LINE_STRIP);
+        glVertex2f(x-0.04f,y+0.02f+fl); glVertex2f(x,y); glVertex2f(x+0.04f,y+0.02f+fl);
+        glEnd(); glLineWidth(1);
+    }
+
+    void render(){
+        glClear(GL_COLOR_BUFFER_BIT);
+        glLoadIdentity();
+        drawRect(-1,-1,1,1,0.97f,0.96f,0.92f);
+        // clouds
+        drawFilledCircle(-0.20f,0.55f,0.09f,1,1,1); drawFilledCircle(-0.08f,0.58f,0.07f,1,1,1);
+        drawFilledCircle(0.04f,0.54f,0.06f,1,1,1);  drawFilledCircle(0.30f,0.62f,0.08f,1,1,1);
+        drawFilledCircle(0.40f,0.65f,0.06f,1,1,1);  drawFilledCircle(0.20f,0.60f,0.06f,1,1,1);
+        drawSun(-0.52f,0.70f);
+        drawBird(birdX,birdY);
+        drawFilledCircle(0.10f,-0.02f,0.28f,0.25f,0.60f,0.15f);
+        drawRect(-1,-0.18f,1,0.02f,0.88f,0.76f,0.38f);
+        drawRect(-1,-0.55f,1,-0.18f,0.18f,0.62f,0.85f);
+        glColor3f(0.30f,0.72f,0.92f); glLineWidth(1.5f);
+        for(float wy=-0.25f;wy>-0.52f;wy-=0.06f){
+            glBegin(GL_LINE_STRIP);
+            for(float wx=-0.9f;wx<0.9f;wx+=0.08f) glVertex2f(wx,wy+0.008f*sinf(wx*12+animTime*3));
+            glEnd();
+        }
+        glLineWidth(1);
+        glPushMatrix(); glTranslatef(-0.85f,0,0); drawBush(0,0,1.2f); glPopMatrix();
+        glPushMatrix(); glTranslatef(-0.70f,0.02f,0); drawBush(0,0,1.0f); glPopMatrix();
+        glPushMatrix(); glTranslatef(-0.82f,0,0);
+        drawHut(-0.08f,-0.14f,0.14f,0.10f); drawHut(0.07f,-0.14f,0.12f,0.09f); drawHut(0.22f,-0.14f,0.13f,0.09f);
+        glPopMatrix();
+        float palms[][2]={{-0.75f,-0.14f},{-0.42f,-0.10f},{-0.05f,-0.08f},{0.38f,-0.10f},{0.68f,-0.12f},{0.82f,-0.12f}};
+        float palmS[]={1,1.1f,1.2f,1,1.1f,0.9f};
+        for(int i=0;i<6;i++){
+            glPushMatrix(); glTranslatef(palms[i][0],palms[i][1],0);
+            drawPalm(0,0,palmS[i],(float)i); glPopMatrix();
+        }
+        glPushMatrix(); glTranslatef(0.08f,0,0); drawMainBuilding(); glPopMatrix();
+        glPushMatrix(); glTranslatef(0.46f,0,0); drawHut(-0.06f,-0.14f,0.18f,0.09f); glPopMatrix();
+        drawPerson(-0.60f,-0.16f,0.10f,0.30f,0.70f); drawPerson(-0.55f,-0.16f,0.20f,0.30f,0.70f);
+        drawPerson(-0.30f,-0.16f,0.10f,0.30f,0.70f); drawPerson(0.52f,-0.16f,0.10f,0.30f,0.70f);
+        drawPerson(0.58f,-0.16f,0.20f,0.40f,0.65f);
+        glPushMatrix(); glTranslatef(boat1X,-0.32f,0); drawBoat(0,0,1,0.90f,0.70f,0.05f,0.45f,0.25f,0.05f); glPopMatrix();
+        glPushMatrix(); glTranslatef(boat2X,-0.30f,0); drawBoat(0,0,1,0.95f,0.95f,0.90f,0.45f,0.25f,0.05f); glPopMatrix();
+        glPushMatrix(); glTranslatef(boat3X,-0.34f,0); drawBoat(0,0,0.85f,0.88f,0.68f,0.05f,0.42f,0.22f,0.04f); glPopMatrix();
+
+        // HUD hint
+        glColor3f(0.2f,0.2f,0.5f);
+        glRasterPos2f(-0.95f,-0.92f);
+        const char* hint="P=Play Sound  S=Stop  ESC=Back to Instructions";
+        for(const char* c=hint;*c;c++) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12,*c);
+
+        glutSwapBuffers();
+    }
+
+    void update(){
+        animTime+=0.016f;
+        boat1X+=0.001f; if(boat1X>1.2f) boat1X=-1.2f;
+        boat2X+=0.0007f; if(boat2X>1.2f) boat2X=-1.2f;
+        boat3X-=0.0015f; if(boat3X<-1.2f) boat3X=1.2f;
+        birdX+=0.004f; birdY=0.70f+sinf(animTime*2)*0.05f;
+        if(birdX>1.2f) birdX=-1.2f;
+    }
+    void keyboard(unsigned char key){
+        if(key=='p'||key=='P'){
+#ifdef _WIN32
+            PlaySound(TEXT("music.wav"),NULL,SND_FILENAME|SND_ASYNC|SND_LOOP);
+#endif
+        }
+        if(key=='s'||key=='S'){
+#ifdef _WIN32
+            PlaySound(NULL,0,0);
+#endif
+        }
+    }
+    void reset(){ animTime=0; boat1X=-0.48f; boat2X=0.05f; boat3X=0.55f; birdX=-1.2f; }
+} // namespace SceneAfia
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  SCENE 3 – MD. Sayeed Alam (Historical Dhaka 1800s)
+// ═══════════════════════════════════════════════════════════════════════════════
+namespace SceneSayeed {
+#define S_NUM_CLOUDS 5
+#define S_NUM_PEOPLE 4
+#define S_NUM_RAINS  300
+    bool cloudsPaused=false, isNight=false, musicEnabled=false, rainEnabled=false;
+    struct Rain{ float x,y,speed; };
+    Rain g_rain[S_NUM_RAINS];
+    struct Cloud{ float baseX,baseY,offsetX,speed,scale; };
+    struct Person2{
+        float x,y,scale,sr,sg,sb,pr,pg,pb,skr,skg,skb;
+    };
+    Cloud g_clouds[S_NUM_CLOUDS]={
+        {-0.70f,0.78f,0,0.00018f,1.0f},{0.00f,0.86f,0,0.00012f,0.8f},
+        {0.50f,0.80f,0,0.00020f,1.2f},{-0.20f,0.90f,0,0.00015f,0.7f},{0.80f,0.73f,0,0.00019f,0.9f}
+    };
+    Person2 g_people[S_NUM_PEOPLE]={
+        {-0.55f,-0.45f,0.80f,0,0.3f,0.6f,0.1f,0.1f,0.1f,0.6f,0.4f,0.2f},
+        {0.00f,-0.60f,0.85f,0.9f,0.9f,0.8f,0.6f,0.1f,0.1f,0.5f,0.3f,0.1f},
+        {0.55f,-0.48f,0.78f,0.9f,0.9f,0.9f,0.7f,0.6f,0.4f,0.7f,0.5f,0.3f},
+        {-0.15f,-0.70f,0.90f,0.2f,0.6f,0.2f,0.2f,0.2f,0.2f,0.6f,0.4f,0.2f}
+    };
+
+    void sq(float x1,float y1,float x2,float y2){
+        glBegin(GL_QUADS);
+        glVertex2f(x1,y1); glVertex2f(x2,y1); glVertex2f(x2,y2); glVertex2f(x1,y2);
+        glEnd();
+    }
+    void fc(float cx,float cy,float r,int n){
+        glBegin(GL_TRIANGLE_FAN); glVertex2f(cx,cy);
+        for(int i=0;i<=n;i++){float a=i*2*PI/n; glVertex2f(cx+r*cosf(a),cy+r*sinf(a));}
+        glEnd();
+    }
+    void fe(float cx,float cy,float rx,float ry,int n){
+        glBegin(GL_TRIANGLE_FAN); glVertex2f(cx,cy);
+        for(int i=0;i<=n;i++){float a=i*2*PI/n; glVertex2f(cx+rx*cosf(a),cy+ry*sinf(a));}
+        glEnd();
+    }
+    void drawCloud(const Cloud& c){
+        float x=c.baseX+c.offsetX,y=c.baseY,s=c.scale;
+        glColor3f(1,1,1);
+        fe(x-0.08f*s,y,0.07f*s,0.04f*s,20);
+        fe(x+0.08f*s,y,0.07f*s,0.04f*s,20);
+        fe(x,y+0.03f*s,0.09f*s,0.05f*s,20);
+    }
+    void drawBackground(){
+        if(!isNight){
+            glBegin(GL_QUADS);
+            glColor3f(0.40f,0.68f,0.90f); glVertex2f(-1,1); glVertex2f(1,1);
+            glColor3f(0.65f,0.85f,0.98f); glVertex2f(1,0.2f); glVertex2f(-1,0.2f);
+            glEnd();
+            glColor3f(0.85f,0.50f,0.30f); sq(-1,-1,1,0.2f);
+        } else {
+            glBegin(GL_QUADS);
+            glColor3f(0.02f,0.02f,0.08f); glVertex2f(-1,1); glVertex2f(1,1);
+            glColor3f(0.05f,0.05f,0.15f); glVertex2f(1,0.2f); glVertex2f(-1,0.2f);
+            glEnd();
+            glColor3f(0.15f,0.10f,0.10f); sq(-1,-1,1,0.2f);
+        }
+    }
+    void drawSunS(){
+        if(!isNight){ glColor3f(1,0.95f,0.35f); fc(0.75f,0.80f,0.08f,40); }
+        else {
+            glColor3f(0.9f,0.9f,0.95f); fc(0.75f,0.80f,0.07f,40);
+            glColor3f(0.02f,0.02f,0.08f); fc(0.78f,0.82f,0.07f,40);
+        }
+    }
+    void drawRain(){
+        if(!rainEnabled) return;
+        glColor3f(0.7f,0.8f,1);
+        glBegin(GL_LINES);
+        for(int i=0;i<S_NUM_RAINS;i++){
+            glVertex2f(g_rain[i].x,g_rain[i].y);
+            glVertex2f(g_rain[i].x,g_rain[i].y-0.03f);
+        }
+        glEnd();
+    }
+    void drawTree(float x,float y,float s){
+        glColor3f(0.42f,0.28f,0.12f); sq(x-0.015f*s,y,x+0.015f*s,y+0.18f*s);
+        glColor3f(0.2f,0.55f,0.2f);
+        fc(x,y+0.23f*s,0.08f*s,20); fc(x-0.05f*s,y+0.18f*s,0.06f*s,20);
+        fc(x+0.05f*s,y+0.18f*s,0.06f*s,20);
+    }
+    void drawBuilding2(float x,float y,float w,float h){
+        glColor3f(0.90f,0.75f,0.50f); sq(x,y,x+w,y+h);
+        glColor3f(0.75f,0.35f,0.15f);
+        glBegin(GL_TRIANGLES); glVertex2f(x-0.02f,y+h); glVertex2f(x+w+0.02f,y+h); glVertex2f(x+w/2,y+h+0.12f); glEnd();
+        glColor3f(0.40f,0.20f,0.05f); sq(x+w*0.40f,y,x+w*0.60f,y+h*0.65f);
+        glColor3f(0.15f,0.15f,0.15f);
+        sq(x+w*0.15f,y+h*0.35f,x+w*0.35f,y+h*0.68f);
+        fc(x+w*0.25f,y+h*0.68f,w*0.10f,20);
+        sq(x+w*0.65f,y+h*0.35f,x+w*0.85f,y+h*0.68f);
+        fc(x+w*0.75f,y+h*0.68f,w*0.10f,20);
+    }
+    void drawMainBuildingS(){
+        glColor3f(0.82f,0.60f,0.38f); sq(-0.42f,0.05f,0.42f,0.62f);
+        glColor3f(0.65f,0.45f,0.25f); sq(-0.48f,0,0.48f,0.05f);
+        glColor3f(0.70f,0.40f,0.20f); sq(-0.45f,0.62f,0.45f,0.68f);
+        glColor3f(0.95f,0.90f,0.75f); fc(0,0.74f,0.14f,40);
+        glColor3f(0.25f,0.15f,0.08f); sq(-0.08f,0.05f,0.08f,0.38f); fc(0,0.38f,0.08f,30);
+        glColor3f(0.15f,0.15f,0.15f);
+        float wX[]={-0.34f,-0.20f,0.10f,0.24f};
+        for(int i=0;i<4;i++){
+            sq(wX[i],0.42f,wX[i]+0.10f,0.52f); fc(wX[i]+0.05f,0.52f,0.05f,20);
+            sq(wX[i],0.24f,wX[i]+0.10f,0.34f); fc(wX[i]+0.05f,0.34f,0.05f,20);
+        }
+    }
+    void drawPersonS(const Person2& p){
+        glPushMatrix(); glTranslatef(p.x,p.y,0);
+        float s=p.scale;
+        glColor3f(p.pr,p.pg,p.pb);
+        sq(-0.015f*s,-0.06f*s,-0.002f*s,0.01f*s);
+        sq(0.002f*s,-0.06f*s,0.015f*s,0.01f*s);
+        glColor3f(p.sr,p.sg,p.sb); sq(-0.022f*s,0.01f*s,0.022f*s,0.08f*s);
+        glColor3f(p.skr,p.skg,p.skb); fc(0,0.11f*s,0.024f*s,16);
+        glPopMatrix();
+    }
+
+    void initRain(){
+        for(int i=0;i<S_NUM_RAINS;i++){
+            g_rain[i].x=(float(rand())/RAND_MAX)*2-1;
+            g_rain[i].y=(float(rand())/RAND_MAX)*2;
+            g_rain[i].speed=0.01f+(float(rand()%10)/1000.0f);
+        }
+    }
+
+    void render(){
+        glClear(GL_COLOR_BUFFER_BIT);
+        glLoadIdentity();
+        drawBackground(); drawSunS(); drawRain();
+        for(int i=0;i<S_NUM_CLOUDS;i++) drawCloud(g_clouds[i]);
+        drawTree(-0.95f,0.20f,1.1f); drawTree(0.90f,0.20f,1.0f);
+        drawBuilding2(-0.90f,0.05f,0.30f,0.30f); drawBuilding2(0.60f,0.08f,0.28f,0.25f);
+        drawMainBuildingS();
+        for(int i=0;i<S_NUM_PEOPLE;i++) drawPersonS(g_people[i]);
+
+        glColor3f(0.2f,0.2f,0.5f);
+        glRasterPos2f(-0.95f,-0.92f);
+        const char* hint="P=Pause  N=Day/Night  R=Rain  M=Toggle Music  ESC=Back";
+        for(const char* c=hint;*c;c++) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12,*c);
+        glutSwapBuffers();
+    }
+
+    void update(){
+        if(!cloudsPaused){
+            for(int i=0;i<S_NUM_CLOUDS;i++){
+                g_clouds[i].offsetX+=g_clouds[i].speed;
+                if(g_clouds[i].baseX+g_clouds[i].offsetX>1.4f)
+                    g_clouds[i].offsetX=-1.4f-g_clouds[i].baseX;
+            }
+        }
+        if(rainEnabled){
+            for(int i=0;i<S_NUM_RAINS;i++){
+                g_rain[i].y-=g_rain[i].speed;
+                if(g_rain[i].y<-1){ g_rain[i].y=1; g_rain[i].x=(float(rand())/RAND_MAX)*2-1; }
+            }
+        }
+    }
+
