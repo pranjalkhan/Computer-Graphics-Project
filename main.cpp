@@ -1852,3 +1852,209 @@ namespace SceneRahul {
         }
         glDisable(GL_BLEND);
     }
+    void drawCrashDebris(float cx, float cy, float t){
+        for(int i=0;i<12;i++){
+            float a = (float)i * PI/6 + t;
+            float r = t * 0.15f;
+            glColor3f(0.25f,0.20f,0.15f);
+            float dx = cosf(a)*r, dy = sinf(a)*r - 0.1f*t*t;
+            glPushMatrix();
+            glTranslatef(cx+dx, cy+dy, 0);
+            glRotatef(t*300, 0, 0, 1);
+            dr(-0.008f,-0.004f,0.016f,0.008f);
+            glPopMatrix();
+        }
+    }
+    void triggerCrash(){
+        crashActive = true; planeCrash = true; crashTimer = 0;
+        crashPlane1X = -1.25f; crashPlane2X = 1.25f;
+        for(int i=0;i<60;i++) cs[i].active=false;
+    }
+    void render(){
+        glClear(GL_COLOR_BUFFER_BIT); glLoadIdentity();
+        drawSky();
+        drawStars();
+        drawSunR();
+        drawClouds();
+        drawGround();
+        drawCity();
+        glColor3f(0.15f,0.45f,0.70f); dr(-1,-0.45f, 2, 0.30f);
+        glColor3f(0.25f,0.55f,0.80f);
+        for(int i=0;i<6;i++){
+            float wy = -0.42f + i*0.04f;
+            glBegin(GL_LINE_STRIP);
+            for(float wx=-0.9f;wx<0.9f;wx+=0.1f)
+                glVertex2f(wx, wy + 0.006f*sinf(wx*10 + cloudMove*0.3f));
+            glEnd();
+        }
+        drawBoatR(boat1X, -0.32f, 1.0f, 0.85f,0.70f,0.15f);
+        drawBoatR(boat2X, -0.35f, 1.1f, 0.90f,0.90f,0.90f);
+        drawBoatR(boat3X, -0.38f, 0.9f, 0.88f,0.55f,0.20f);
+        drawBoatR(boat4X, -0.30f, 1.0f, 0.50f,0.75f,0.85f);
+        glColor3f(0.20f,0.50f,0.15f);
+        for(int i=0;i<12;i++){ float gx = -0.95f + i*0.17f; dr(gx, -0.10f, 0.03f, 0.08f); }
+        drawTrainR();
+        drawPlane(); drawHeli();
+        drawFlyingCar(flyingCar1X, 0.42f, 0.90f, 0.30f, 0.30f);
+        drawFlyingCar(flyingCar2X, 0.30f, 0.30f, 0.60f, 0.90f);
+        drawDrone(droneX, 0.50f);
+        drawPodR();
+        if(crashActive){
+            drawCrashPlane(crashPlane1X, 0.40f, 25);
+            drawCrashPlane(crashPlane2X, 0.40f, -25);
+            if(planeCrash && fabsf(crashPlane1X - crashPlane2X) < 0.15f){
+                drawCrashDebris(0.0f, 0.40f, crashTimer);
+                if(crashTimer < 3.0f){ for(int i=0;i<4;i++) spawnCrashSmoke(0.0f, 0.40f); }
+                if(crashSmokeSize < 0.15f) crashSmokeSize += 0.002f;
+                glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+                glColor4f(1,0.6f,0.2f, 0.4f - crashSmokeSize*2);
+                dci(0,0.40f, crashSmokeSize*1.5f);
+                glDisable(GL_BLEND);
+            }
+        }
+        drawCrashSmoke();
+        glColor3f(0.2f,0.2f,0.5f);
+        glRasterPos2f(-0.95f,-0.92f);
+        const char* hint="C=Cycle Day/Afternoon/Night  B=Plane Crash  ESC=Back";
+        for(const char* c=hint;*c;c++) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12,*c);
+        glutSwapBuffers();
+    }
+    void update(){
+        cloudMove += 1.0f;
+        planeX += 0.005f;   if(planeX > 1.4f) planeX = -1.4f;
+        heliX  += 0.003f;   if(heliX > 1.4f) heliX = -1.4f;
+        trainX += 0.008f;   if(trainX > 1.3f) trainX = -1.3f;
+        flyingCar1X += 0.006f; if(flyingCar1X > 1.4f) flyingCar1X = -1.4f;
+        flyingCar2X -= 0.007f; if(flyingCar2X < -1.4f) flyingCar2X = 1.4f;
+        droneX += 0.004f;   if(droneX > 1.4f) droneX = -1.4f;
+        podX += 0.005f;     if(podX > 1.4f) podX = -1.4f;
+        boat1X += 0.002f;   if(boat1X > 1.2f) boat1X = -1.2f;
+        boat2X += 0.0015f;  if(boat2X > 1.2f) boat2X = -1.2f;
+        boat3X += 0.0018f;  if(boat3X > 1.2f) boat3X = -1.2f;
+        boat4X += 0.0022f;  if(boat4X > 1.2f) boat4X = -1.2f;
+        if(crashActive){
+            crashTimer += 0.016f;
+            crashPlane1X += 0.012f;
+            crashPlane2X -= 0.012f;
+            updateCrashSmoke();
+            if(crashTimer > 5.0f){
+                crashActive = false; planeCrash = false; crashSmokeSize = 0;
+            }
+        }
+    }
+    void keyboard(unsigned char key){
+        if(key=='c'||key=='C') sceneMode = (sceneMode+1) % 3;
+        if(key=='b'||key=='B') triggerCrash();
+    }
+    void mouseFunc(int button, int state, int, int){
+        if(state==GLUT_DOWN && button==GLUT_LEFT_BUTTON) sceneMode = (sceneMode+1) % 3;
+    }
+    void reset(){
+        sceneMode=0;
+        planeX=-1.25f; heliX=-1.25f; cloudMove=0;
+        trainX=-1.30f; flyingCar1X=-1.20f; flyingCar2X=1.20f; droneX=-1.20f; podX=-1.25f;
+        crashPlane1X=-1.25f; crashPlane2X=1.25f;
+        crashActive=false; planeCrash=false; crashSmokeSize=0; crashTimer=0;
+        boat1X=-1.10f; boat2X=-1.20f; boat3X=-1.30f; boat4X=-1.40f;
+        for(int i=0;i<60;i++) cs[i].active=false;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  GLOBAL DISPATCH / TIMER / MAIN
+// ═══════════════════════════════════════════════════════════════════════════════
+static void enterScene(int s){
+    g_fullMergeActive = 0;
+    g_scene = s;
+    switch(s){
+        case 2: SceneAfia::reset();   break;
+        case 3: SceneSayeed::reset(); break;
+        case 4: SceneAbrar::reset();  break;
+        case 5: SceneRafid::reset();  break;
+        case 6: SceneRahul::reset();  break;
+    }
+}
+static void displayFunc(){
+    switch(g_scene){
+        case 0: Cover::render();        break;
+        case 1: Instructions::render(); break;
+        case 2: SceneAfia::render();    break;
+        case 3: SceneSayeed::render();  break;
+        case 4: SceneAbrar::render();   break;
+        case 5: SceneRafid::render();   break;
+        case 6: SceneRahul::render();   break;
+    }
+}
+static void timerFunc(int){
+    switch(g_scene){
+        case 2: SceneAfia::update();   break;
+        case 3: SceneSayeed::update(); break;
+        case 4: SceneAbrar::update();  break;
+        case 5: SceneRafid::update();  break;
+        case 6: SceneRahul::update();  break;
+    }
+    if(g_fullMergeActive){
+        g_mergeTick++;
+        if(g_mergeTick >= 480){
+            g_mergeTick = 0; g_mergeIdx = (g_mergeIdx+1) % 5;
+            enterScene(2 + g_mergeIdx); g_fullMergeActive = 1;
+        }
+    }
+    glutPostRedisplay();
+    glutTimerFunc(16, timerFunc, 0);
+}
+static void keyboardFunc(unsigned char key, int mx, int my){
+    if(g_scene == 0){
+        if(key==13 || key==' '){ g_scene = 1; return; }
+        if(key==27) exit(0);
+        return;
+    }
+    if(g_scene == 1){
+        if(key==27){ g_scene = 0; return; }
+        if(key>='1' && key<='5'){ enterScene(1 + (key-'0')); return; }
+        if(key=='f'||key=='F'){ g_fullMergeActive=1; g_mergeIdx=0; g_mergeTick=0; enterScene(2); g_fullMergeActive=1; return; }
+        return;
+    }
+    if(key==27){ enterScene(1); return; }
+    if(g_fullMergeActive) return;
+    switch(g_scene){
+        case 2: SceneAfia::keyboard(key); break;
+        case 3: SceneSayeed::keyboard(key); break;
+        case 4: SceneAbrar::keyboard(key, mx, my); break;
+        case 5: SceneRafid::keyboard(key, mx, my); break;
+        case 6: SceneRahul::keyboard(key); break;
+    }
+}
+static void specialFunc(int key, int mx, int my){
+    if(g_scene == 4) SceneAbrar::specialKeys(key, mx, my);
+    else if(g_scene == 5) SceneRafid::specialKeys(key, mx, my);
+}
+static void mouseFunc(int button, int state, int mx, int my){
+    if(g_scene == 4) SceneAbrar::mouseFunc(button, state, mx, my);
+    else if(g_scene == 5) SceneRafid::mouseFunc(button, state, mx, my);
+    else if(g_scene == 6) SceneRahul::mouseFunc(button, state, mx, my);
+}
+int main(int argc, char** argv){
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+    glutInitWindowSize(g_winW, g_winH);
+    glutInitWindowPosition(80, 60);
+    glutCreateWindow("Merged CG Project - AIUB");
+    glMatrixMode(GL_PROJECTION); glLoadIdentity();
+    gluOrtho2D(-1,1,-1,1);
+    glMatrixMode(GL_MODELVIEW); glLoadIdentity();
+    glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    SceneAfia::reset();
+    SceneSayeed::reset();
+    SceneAbrar::reset();
+    SceneRafid::reset();
+    SceneRahul::reset();
+
+    glutDisplayFunc(displayFunc);
+    glutKeyboardFunc(keyboardFunc);
+    glutSpecialFunc(specialFunc);
+    glutMouseFunc(mouseFunc);
+    glutTimerFunc(16, timerFunc, 0);
+    glutMainLoop();
+    return 0;
