@@ -1002,3 +1002,853 @@ namespace SceneAbrar {
             }
         }
     }
+    void drawFactory(float x,float y){
+        float w=0.18f,h=0.52f;
+        glColor3f(0.52f,0.22f,0.10f); qd(x,y,x+w,y+h);
+        glColor3f(0.38f,0.14f,0.05f); qd(x-0.004f,y+h,x+w+0.004f,y+h+0.020f);
+        float aww=0.045f;
+        for(int i=0;i<3;i++){
+            float ax=x+0.022f+i*(aww+0.012f),ay=y+0.08f;
+            glColor3f(0.28f,0.08f,0.03f); qd(ax,ay,ax+aww,ay+0.14f); fc(ax+aww*0.5f,ay+0.14f,aww*0.5f,14);
+            glColor3f(0.50f,0.38f,0.18f); qd(ax+0.003f,ay,ax+aww-0.003f,ay+0.14f);
+        }
+        float chx=x+w*0.70f,chH=0.50f;
+        glColor3f(0.40f,0.18f,0.07f); qd(chx,y+h,chx+0.038f,y+h+chH);
+        glColor3f(0.18f,0.08f,0.03f); qd(chx-0.008f,y+h+chH-0.012f,chx+0.046f,y+h+chH+0.008f);
+    }
+    void drawStationHouse(float x,float y){
+        float w=0.16f,h=0.36f;
+        glColor3f(0.88f,0.72f,0.30f); qd(x,y,x+w,y+h);
+        glColor3f(0.60f,0.48f,0.20f); qd(x,y+h*0.68f,x+w,y+h);
+        glColor3f(0.35f,0.28f,0.18f);
+        glBegin(GL_TRIANGLES); glVertex2f(x-0.008f,y+h); glVertex2f(x+w*0.5f,y+h+0.06f); glVertex2f(x+w+0.008f,y+h); glEnd();
+        glColor3f(0.45f,0.35f,0.15f);
+        qd(x+0.02f,y+0.10f,x+0.07f,y+0.18f); qd(x+0.09f,y+0.10f,x+0.14f,y+0.18f);
+        glColor3f(0.35f,0.25f,0.10f);
+        qd(x+w*0.38f,y,x+w*0.38f+0.045f,y+0.12f); fc(x+w*0.38f+0.0225f,y+0.12f,0.0225f,14);
+    }
+    void drawLampAB(float x,float y){
+        glColor3f(0.48f,0.48f,0.50f); qd(x-0.004f,y,x+0.004f,y+0.18f);
+        glLineWidth(2.5f); glColor3f(0.45f,0.45f,0.48f);
+        glBegin(GL_LINE_STRIP);
+        for(int i=0;i<=10;i++){ float a=PI+i*PI*0.5f/10; glVertex2f(x+0.020f*cosf(a),y+0.18f+0.020f*sinf(a)); }
+        glEnd();
+        glColor3f(1,0.95f,0.60f); fc(x+0.020f,y+0.200f,0.014f,14);
+    }
+    void drawSignalAB(){
+        float sx=0.15f,sy=-0.22f;
+        glColor3f(0.35f,0.35f,0.38f); qd(sx-0.007f,sy-0.30f,sx+0.007f,-0.42f);
+        glColor3f(0.12f,0.12f,0.14f); qd(sx-0.024f,sy,sx+0.024f,sy+0.090f);
+        if(g_signalFlash>0){
+            glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+            glColor4f(1,1,0.8f,0.6f*g_flashIntensity); fc(sx,sy+0.052f,0.045f,20);
+            glDisable(GL_BLEND);
+            g_signalFlash--; g_flashIntensity=g_signalFlash/15.0f;
+        }
+        if(g_signal==0) glColor3f(1,0.10f,0.10f); else glColor3f(0.18f,0,0);
+        fc(sx,sy+0.070f,0.015f,14);
+        if(g_signal==1) glColor3f(0.10f,1,0.22f); else glColor3f(0,0.18f,0.04f);
+        fc(sx,sy+0.035f,0.015f,14);
+        glColor3f(0.30f,0.30f,0.32f); qd(sx-0.018f,sy-0.30f,sx+0.018f,sy-0.26f);
+    }
+    void drawWheel(float cx,float cy,float r){
+        glColor3f(0.10f,0.10f,0.12f); fc(cx,cy,r,32);
+        glColor3f(0.38f,0.38f,0.40f); oc(cx,cy,r,32,2.5f);
+        glColor3f(0.50f,0.52f,0.55f); fc(cx,cy,r*0.70f,28);
+        glPushMatrix(); glTranslatef(cx,cy,0); glRotatef(g_wheelAngle,0,0,1);
+        glColor3f(0.25f,0.26f,0.28f); glLineWidth(2.5f); glBegin(GL_LINES);
+        for(int s=0;s<8;s++){ float a=s*PI/4; glVertex2f(r*0.15f*cosf(a),r*0.15f*sinf(a)); glVertex2f(r*0.65f*cosf(a),r*0.65f*sinf(a)); }
+        glEnd(); glPopMatrix();
+        glColor3f(0.12f,0.12f,0.14f); fc(cx,cy,r*0.16f,12);
+    }
+    void drawTracks(){
+        glColor3f(0.42f,0.32f,0.18f); qd(-1,-0.480f,1,-0.415f);
+        glColor3f(0.55f,0.55f,0.58f); glLineWidth(3.5f);
+        glBegin(GL_LINES);
+        glVertex2f(-1,-0.422f); glVertex2f(1,-0.422f);
+        glVertex2f(-1,-0.462f); glVertex2f(1,-0.462f);
+        glEnd();
+        glLineWidth(5.5f); glColor3f(0.40f,0.25f,0.11f);
+        glBegin(GL_LINES);
+        for(float sx=-1;sx<1;sx+=0.065f){ glVertex2f(sx,-0.416f); glVertex2f(sx,-0.470f); }
+        glEnd();
+    }
+    void drawTrainWheels(){
+        float tx=g_trainX;
+        drawWheel(tx+0.79f,-0.450f,0.055f); drawWheel(tx+0.94f,-0.450f,0.055f);
+        drawWheel(tx+0.46f,-0.448f,0.060f); drawWheel(tx+0.64f,-0.448f,0.060f);
+        drawWheel(tx+0.23f,-0.448f,0.055f); drawWheel(tx+0.35f,-0.448f,0.055f);
+        float bx=tx-0.30f;
+        drawWheel(bx+0.016f,-0.450f,0.078f); drawWheel(bx+0.122f,-0.450f,0.078f);
+        drawWheel(bx+0.218f,-0.450f,0.078f); drawWheel(bx-0.005f,-0.450f,0.055f);
+        drawWheel(bx+0.304f,-0.450f,0.055f);
+    }
+    void drawPiston(float tx){
+        float ry=-0.336f;
+        glColor3f(0.60f,0.28f,0.08f); qd(tx-0.22f,ry-0.005f,tx+0.09f,ry+0.015f);
+        float pl=0.07f+sinf(g_pistonPhase)*0.028f;
+        glColor3f(0.45f,0.45f,0.48f); qd(tx-0.26f-pl,ry-0.005f,tx-0.22f,ry+0.016f);
+        glColor3f(0.28f,0.28f,0.30f); qd(tx-0.25f,ry-0.015f,tx-0.18f,ry+0.025f);
+    }
+    void drawTrain(){
+        float tx=g_trainX;
+        glColor3f(0.65f,0.18f,0.06f); qd(tx+0.73f,-0.38f,tx+1.03f,-0.38f+0.25f);
+        glColor3f(0.38f,0.40f,0.42f); qd(tx+0.725f,-0.38f+0.25f,tx+1.035f,-0.38f+0.275f);
+        glColor3f(0.72f,0.22f,0.07f); qd(tx+0.39f,-0.37f,tx+0.73f,-0.37f+0.26f);
+        glColor3f(0.36f,0.38f,0.42f); qd(tx+0.385f,-0.37f+0.26f,tx+0.735f,-0.37f+0.288f);
+        for(int w=0;w<6;w++){
+            float wx=tx+0.407f+w*0.050f,wy=-0.37f+0.045f;
+            glColor3f(0.62f,0.76f,0.88f); qd(wx,wy,wx+0.038f,wy+0.075f);
+        }
+        glColor3f(0.14f,0.14f,0.17f); qd(tx+0.17f,-0.35f,tx+0.39f,-0.14f);
+        glColor3f(0.65f,0.20f,0.06f); qd(tx-0.04f,-0.36f,tx+0.17f,-0.09f);
+        glColor3f(0.25f,0.26f,0.30f); qd(tx-0.04f,-0.09f,tx+0.17f,-0.060f);
+        glColor3f(0.18f,0.32f,0.50f); qd(tx+0.02f,-0.30f,tx+0.12f,-0.14f);
+        float bx=tx-0.30f,by=-0.285f,brad=0.105f;
+        glColor3f(0.12f,0.12f,0.15f); qd(bx,by-brad,bx+0.32f,by+brad);
+        glColor3f(0.10f,0.10f,0.13f); fc(bx,by,brad+0.005f,32);
+        float skx=bx+0.064f,sky=by+brad;
+        glColor3f(0.10f,0.10f,0.12f);
+        qd(skx-0.022f,sky,skx+0.022f,sky+0.075f); qd(skx-0.035f,sky+0.062f,skx+0.035f,sky+0.085f);
+        fc(skx,sky+0.080f,0.038f,22);
+        glColor3f(0.72f,0.12f,0.04f);
+        glBegin(GL_TRIANGLES);
+        glVertex2f(bx-0.005f,-0.360f); glVertex2f(bx-0.095f,-0.435f); glVertex2f(bx+0.015f,-0.360f);
+        glEnd();
+        glColor3f(0.42f,0.20f,0.07f); qd(bx-0.008f,-0.370f,bx+0.49f,-0.355f);
+        drawPiston(tx);
+    }
+    void drawOnePerson(const ABPerson& p){
+        float s=p.scale;
+        glColor3f(0.10f,0.07f,0.02f);
+        fe(-0.014f*s,-0.068f*s,0.014f*s,0.007f*s,10);
+        fe(0.014f*s,-0.068f*s,0.014f*s,0.007f*s,10);
+        glColor3f(p.pr,p.pg,p.pb);
+        qd(-0.020f*s,-0.065f*s,-0.005f*s,0.018f*s);
+        qd(0.005f*s,-0.065f*s,0.020f*s,0.018f*s);
+        glColor3f(p.sr,p.sg,p.sb);
+        glBegin(GL_QUADS);
+        glVertex2f(-0.024f*s,0.018f*s); glVertex2f(0.024f*s,0.018f*s);
+        glVertex2f(0.026f*s,0.090f*s);  glVertex2f(-0.026f*s,0.090f*s);
+        glEnd();
+        glColor3f(p.skr,p.skg,p.skb);
+        fc(0,0.128f*s,0.030f*s,20);
+    }
+    void drawBirdAB(float x,float y,float dir,float r,float g,float b){
+        float facing=(dir>0)?1:-1;
+        glPushMatrix(); glTranslatef(x,y,0);
+        if(facing<0) glScalef(-1,1,1);
+        glColor3f(r,g,b); fe(0,0,0.040f,0.028f,20);
+        glColor3f(r*0.85f,g*0.85f,b*0.85f); fc(0.048f,0.012f,0.022f,16);
+        glColor3f(1,0.65f,0.15f);
+        glBegin(GL_TRIANGLES);
+        glVertex2f(0.068f,0.014f); glVertex2f(0.088f,0.008f); glVertex2f(0.068f,0.002f);
+        glEnd();
+        glColor3f(0,0,0); fc(0.060f,0.018f,0.004f,8);
+        glPopMatrix();
+    }
+    void initFlock(){
+        for(int i=0;i<AB_FLOCK;i++){
+            g_flock[i].x=-1.2f+(float)i*0.25f;
+            g_flock[i].y=0.68f+((float)rand()/RAND_MAX)*0.18f;
+            g_flock[i].speed=0.0003f+((float)rand()/RAND_MAX)*0.0005f;
+            float ch=(float)rand()/RAND_MAX;
+            if(ch<0.33f){g_flock[i].r=0.55f;g_flock[i].g=0.40f;g_flock[i].b=0.25f;}
+            else if(ch<0.66f){g_flock[i].r=0.40f;g_flock[i].g=0.45f;g_flock[i].b=0.55f;}
+            else{g_flock[i].r=0.65f;g_flock[i].g=0.35f;g_flock[i].b=0.30f;}
+        }
+    }
+    void initPeople(){
+        for(int i=0;i<AB_NUM_PEOPLE;i++){
+            g_people[i].offsetX=0; g_people[i].speed=0.0001f+((float)rand()/RAND_MAX)*0.00015f;
+            if(g_people[i].dir==0) g_people[i].dir=1;
+        }
+    }
+    void render(){
+        glClear(GL_COLOR_BUFFER_BIT); glLoadIdentity();
+        drawBackground();
+        drawHills();
+        drawSunAB();
+        for(int i=0;i<6;i++) drawCloud(g_cloudX[i],g_cloudY[i]);
+        glColor3f(0.62f,0.65f,0.70f); qd(-1,-0.10f,-0.92f,0.30f);
+        glColor3f(0.56f,0.60f,0.64f); qd(-0.92f,-0.10f,-0.85f,0.22f);
+        drawFactory(-0.72f,-0.10f);
+        drawBuilding(-0.98f,-0.10f,0.26f,0.42f,0.72f,0.30f,0.14f,0.52f,0.18f,0.07f,2,2,false,false);
+        drawBuilding(-0.50f,-0.10f,0.24f,0.52f,0.78f,0.38f,0.16f,0.55f,0.22f,0.08f,3,2,true, false);
+        drawBuilding(-0.24f,-0.10f,0.28f,0.58f,0.82f,0.65f,0.28f,0.58f,0.42f,0.14f,3,2,false,false);
+        drawStationHouse(-0.02f,-0.10f);
+        drawBuilding(0.20f,-0.10f,0.22f,0.44f,0.80f,0.68f,0.32f,0.56f,0.44f,0.16f,2,2,false,false);
+        drawBuilding(0.44f,-0.10f,0.20f,0.40f,0.66f,0.56f,0.36f,0.44f,0.36f,0.18f,2,2,false,true);
+        drawBuilding(0.66f,-0.10f,0.26f,0.46f,0.72f,0.66f,0.44f,0.48f,0.44f,0.24f,3,2,false,false);
+        glColor3f(0.76f,0.42f,0.22f); qd(-1,-0.14f,1,-0.10f);
+        drawTreeAB(-0.98f,-0.10f,1.1f); drawTreeAB(-0.93f,-0.10f,0.95f); drawTreeAB(0.86f,-0.10f,1); drawTreeAB(0.91f,-0.10f,0.9f);
+        float lampX[]={-0.62f,-0.30f,0.05f,0.38f,0.70f};
+        for(int i=0;i<5;i++) drawLampAB(lampX[i],-0.40f);
+        drawSignalAB();
+        drawTracks();
+        drawCrate(-0.85f,-0.395f,1.4f); drawCrate(-0.82f,-0.395f,1.0f);
+        drawBarrel(-0.42f,-0.395f,1.6f); drawBarrel(0.05f,-0.395f,1.4f);
+        drawCrate(0.78f,-0.395f,1.3f);
+        for(int i=0;i<AB_NUM_PEOPLE;i++){
+            const ABPerson& p=g_people[i];
+            if(p.baseY>-0.50f){ glPushMatrix(); glTranslatef(p.baseX+p.offsetX,p.baseY,0); drawOnePerson(p); glPopMatrix(); }
+        }
+        drawTrainWheels();
+        for(int i=0;i<AB_FLOCK;i++) drawBirdAB(g_flock[i].x,g_flock[i].y,1,g_flock[i].r,g_flock[i].g,g_flock[i].b);
+        for(int i=0;i<AB_NUM_PEOPLE;i++){
+            const ABPerson& p=g_people[i];
+            if(p.baseY<=-0.50f){ glPushMatrix(); glTranslatef(p.baseX+p.offsetX,p.baseY,0); drawOnePerson(p); glPopMatrix(); }
+        }
+        drawSmoke(); drawTrain();
+        glColor3f(0.2f,0.2f,0.5f);
+        glRasterPos2f(-0.95f,-0.92f);
+        const char* hint="S=Signal  SPACE=Pause  Arrows=TrainSpd  M=Mute  U=Unmute  ESC=Back";
+        for(const char* c=hint;*c;c++) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12,*c);
+        glutSwapBuffers();
+    }
+    void update(){
+        if(!g_paused){
+            g_frame++;
+            if(g_signal==1){
+                g_trainX+=g_trainSpeed; if(g_trainX>1) g_trainX-=2; if(g_trainX<-1) g_trainX+=2;
+                g_wheelAngle-=1.2f; g_pistonPhase+=0.03f;
+            }
+            g_sunAngle+=0.00012f;
+            for(int i=0;i<6;i++){ g_cloudX[i]+=g_cloudSp[i]; if(g_cloudX[i]>1.6f) g_cloudX[i]=-1.6f; }
+            updateSmoke();
+            if(g_frame%2==0){
+                float skx=g_trainX-0.30f+0.32f*0.20f,sky=-0.285f+0.105f+0.080f;
+                spawnSmoke(skx,sky,true);
+                if(g_frame%3==0) spawnSmoke(skx+0.005f,sky-0.010f,false);
+            }
+            for(int i=0;i<AB_NUM_PEOPLE;i++){
+                ABPerson& p=g_people[i]; p.offsetX+=p.speed*p.dir;
+                float wx=p.baseX+p.offsetX;
+                if(wx>0.85f){wx=-0.85f;p.offsetX=wx-p.baseX;}
+                else if(wx<-0.85f){wx=0.85f;p.offsetX=wx-p.baseX;}
+            }
+            float wx0=g_people[0].baseX+g_people[0].offsetX;
+            float wx1=g_people[1].baseX+g_people[1].offsetX;
+            if(fabsf(wx0-wx1)<0.12f){
+                g_people[0].dir*=-1; g_people[1].dir*=-1;
+                if(wx0<wx1){g_people[0].offsetX-=0.005f;g_people[1].offsetX+=0.005f;}
+                else{g_people[0].offsetX+=0.005f;g_people[1].offsetX-=0.005f;}
+            }
+            for(int i=0;i<AB_FLOCK;i++){
+                g_flock[i].x+=g_flock[i].speed;
+                if(g_flock[i].x>1.25f){ g_flock[i].x=-1.25f; g_flock[i].y=0.68f+((float)rand()/RAND_MAX)*0.18f; }
+            }
+        }
+    }
+    void keyboard(unsigned char key,int,int){
+        if(key=='s'||key=='S'){ g_signal=!g_signal; g_signalFlash=15; g_flashIntensity=1; }
+        if(key==' ') g_paused=!g_paused;
+        if(key=='m'||key=='M'){ if(!g_soundMuted){ g_soundMuted=true;
+#ifdef _WIN32
+            PlaySound(NULL,NULL,0);
+#endif
+        }}
+        if(key=='u'||key=='U'){ if(g_soundMuted){ g_soundMuted=false;
+#ifdef _WIN32
+            PlaySound("Train_Sound.wav",NULL,SND_ASYNC|SND_LOOP|SND_FILENAME);
+#endif
+        }}
+    }
+    void specialKeys(int key,int,int){
+        if(key==GLUT_KEY_UP){ g_trainSpeed+=0.0001f; if(g_trainSpeed>0.0020f) g_trainSpeed=0.0020f; }
+        if(key==GLUT_KEY_DOWN){ g_trainSpeed-=0.0001f; if(g_trainSpeed<0.0001f) g_trainSpeed=0.0001f; }
+    }
+    void mouseFunc(int button,int state,int,int){
+        if(state==GLUT_DOWN){
+            if(button==GLUT_LEFT_BUTTON){ g_signal=!g_signal; g_signalFlash=15; g_flashIntensity=1; }
+            if(button==GLUT_RIGHT_BUTTON) g_paused=!g_paused;
+        }
+    }
+    void reset(){
+        g_paused=false; g_signal=1; g_trainX=-0.3f; g_wheelAngle=0; g_pistonPhase=0;
+        g_sunAngle=-0.3f; g_frame=0; g_signalFlash=0;
+        initSmoke(); initFlock(); initPeople();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  SCENE 5 – Modern City
+// ═══════════════════════════════════════════════════════════════════════════════
+namespace SceneRafid {
+#define RF_NUM_VEHICLES 10
+#define RF_NUM_PEOPLE 8
+#define RF_COLLIDE 0.065f
+#define RF_NUM_BIRDS 6
+    int   g_paused=0, g_signal=1, g_muted=0, g_frame=0;
+    float g_metroX=-0.30f, g_metroSpeed=0.0004f, g_sunAngle=-0.3f, g_roadSpeedMult=1;
+    float g_cloudX[5]={-0.70f,0,0.50f,-0.20f,0.80f};
+    float g_cloudY[5]={0.78f,0.86f,0.80f,0.90f,0.73f};
+    float g_cloudSp[5]={0.00008f,0.00006f,0.00010f,0.00005f,0.00009f};
+    static float g_timeRF=0;
+    static bool g_nightRF=false;
+    struct RFBird { float x,y,phase,speed; };
+    static RFBird g_birdsRF[RF_NUM_BIRDS];
+    struct RFVehicle{ float baseX,baseY,offsetX,speed,originalSpeed,dir,r,g,b,r2,g2,b2; int type; };
+    struct RFPerson{ float baseX,baseY,offsetX,speed,dir,scale,sr,sg,sb,pr,pg,pb,skr,skg,skb; int wave; };
+    RFVehicle g_vehicles[RF_NUM_VEHICLES];
+    RFPerson  g_people[RF_NUM_PEOPLE];
+    void dq(float x1,float y1,float x2,float y2){ glBegin(GL_QUADS); glVertex2f(x1,y1); glVertex2f(x2,y1); glVertex2f(x2,y2); glVertex2f(x1,y2); glEnd(); }
+    void dc(float cx,float cy,float r,int s){ glBegin(GL_TRIANGLE_FAN); glVertex2f(cx,cy); for(int i=0;i<=s;i++){float a=i*2*PI/s;glVertex2f(cx+r*cosf(a),cy+r*sinf(a));} glEnd(); }
+    void de(float cx,float cy,float rx,float ry,int s){ glBegin(GL_TRIANGLE_FAN); glVertex2f(cx,cy); for(int i=0;i<=s;i++){float a=i*2*PI/s;glVertex2f(cx+rx*cosf(a),cy+ry*sinf(a));} glEnd(); }
+    void initBirdsRF(){
+        for(int i=0;i<RF_NUM_BIRDS;i++){
+            g_birdsRF[i].x = -1.2f + i*0.4f;
+            g_birdsRF[i].y = 0.55f + (rand()%100)/100.0f*0.2f;
+            g_birdsRF[i].phase = (float)i*1.1f;
+            g_birdsRF[i].speed = 0.0008f + (rand()%100)/100.0f*0.0005f;
+        }
+    }
+    void drawBirdRF(const RFBird& b){
+        float flap = sinf(g_timeRF*6 + b.phase)*0.012f;
+        glColor3f(0.20f,0.22f,0.28f); glLineWidth(2);
+        glBegin(GL_LINE_STRIP);
+        glVertex2f(b.x-0.028f, b.y+0.010f+flap);
+        glVertex2f(b.x, b.y);
+        glVertex2f(b.x+0.028f, b.y+0.010f+flap);
+        glEnd(); glLineWidth(1);
+    }
+    void drawStarsRF(){
+        for(int i=0;i<60;i++){
+            float x = -0.98f + fmodf(i*0.037f, 1.96f);
+            float y =  0.30f + fmodf(i*0.061f, 0.66f);
+            float a = 0.4f + 0.6f*fabsf(sinf(g_timeRF + i*0.7f));
+            glColor3f(a,a,a);
+            glPointSize(2); glBegin(GL_POINTS); glVertex2f(x,y); glEnd();
+        }
+        glPointSize(1);
+    }
+    void drawBillboard(float x,float y,float w,float h,float r,float g,float b){
+        glColor3f(0.18f,0.18f,0.20f); dq(x-0.004f,y,x+w+0.004f,y+h+0.004f);
+        glColor3f(r,g,b); dq(x,y,x+w,y+h);
+        glColor3f(1,1,1);
+        for(int i=0;i<4;i++) dq(x+w*0.10f, y+h*0.55f - i*h*0.15f, x+w*0.65f, y+h*0.55f - i*h*0.15f + h*0.06f);
+        glColor3f(r*0.8f,g*0.8f,b*0.8f); dq(x+w*0.80f, y+h*0.30f, x+w*0.92f, y+h*0.70f);
+        glColor3f(0.30f,0.30f,0.32f); dq(x+w*0.48f, y-0.10f, x+w*0.52f, y);
+    }
+    void drawBackground(){
+        glBegin(GL_QUADS);
+        glColor3f(0.38f,0.68f,0.95f); glVertex2f(-1,1); glVertex2f(1,1);
+        glColor3f(0.62f,0.86f,0.98f); glVertex2f(1,0); glVertex2f(-1,0);
+        glEnd();
+        glColor3f(0.28f,0.55f,0.22f); dq(-1,-0.1f,1,-0.55f);
+        glColor3f(0.28f,0.30f,0.32f); dq(-1,-0.55f,1,-0.87f);
+        glColor3f(0.85f,0.85f,0.20f);
+        dq(-1,-0.688f,1,-0.682f); dq(-1,-0.696f,1,-0.690f);
+        glColor3f(0.9f,0.9f,0.9f);
+        for(float dx=-1;dx<1;dx+=0.12f){dq(dx,-0.633f,dx+0.07f,-0.629f);dq(dx,-0.750f,dx+0.07f,-0.746f);}
+        glColor3f(0.65f,0.64f,0.62f); dq(-1,-0.87f,1,-1);
+        glColor3f(0.8f,0.8f,0.8f); dq(-1,-0.87f,1,-0.862f);
+    }
+    void drawSunRF(){
+        float sx=cosf(g_sunAngle)*0.78f,sy=0.70f+sinf(g_sunAngle)*0.22f;
+        glColor3f(1,0.95f,0.55f); dc(sx,sy,0.055f,32);
+        glColor3f(1,0.98f,0.75f); dc(sx,sy,0.038f,32);
+    }
+    void drawCloudRF(float cx,float cy){
+        glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        glColor4f(1,1,1,0.92f);
+        de(cx-0.10f,cy,0.075f,0.045f,20); de(cx+0.10f,cy,0.075f,0.045f,20);
+        de(cx,cy,0.085f,0.050f,20); de(cx-0.06f,cy+0.042f,0.065f,0.048f,20);
+        de(cx+0.05f,cy+0.048f,0.060f,0.046f,20); de(cx,cy+0.062f,0.055f,0.042f,20);
+        glDisable(GL_BLEND);
+    }
+    void drawTreeRF(float tx,float ty,float s){
+        glColor3f(0.42f,0.28f,0.12f); dq(tx-0.012f*s,ty,tx+0.012f*s,ty+0.20f*s);
+        glColor3f(0.15f,0.48f,0.12f); dc(tx,ty+0.21f*s,0.075f*s,22);
+        glColor3f(0.18f,0.55f,0.14f); dc(tx-0.04f*s,ty+0.18f*s,0.065f*s,20);
+        dc(tx+0.04f*s,ty+0.18f*s,0.062f*s,20);
+        glColor3f(0.22f,0.60f,0.16f); dc(tx,ty+0.26f*s,0.055f*s,18);
+    }
+    void drawSkyscraper(float x,float y,float w,float h,float r,float g,float b,float wr,float wg,float wb,int winsX,int winsY){
+        glColor3f(r,g,b); dq(x,y,x+w,y+h);
+        glColor3f(r*0.75f,g*0.75f,b*0.75f); dq(x-0.004f,y+h,x+w+0.004f,y+h+0.018f);
+        float ww=w/(winsX+1)*0.6f,wh=h/(winsY+1)*0.5f;
+        float gapX=(w-winsX*ww)/(winsX+1),gapY=(h-winsY*wh)/(winsY+1);
+        for(int row=0;row<winsY;row++){
+            float wy=y+gapY+row*(wh+gapY);
+            for(int col=0;col<winsX;col++){
+                float wx=x+gapX+col*(ww+gapX);
+                glColor3f(r*0.55f,g*0.60f,b*0.65f); dq(wx-0.002f,wy-0.002f,wx+ww+0.002f,wy+wh+0.002f);
+                glColor3f(wr,wg,wb); dq(wx,wy,wx+ww,wy+wh);
+            }
+        }
+    }
+    void drawViaduct(){
+        glColor3f(0.82f,0.82f,0.80f); dq(-1,-0.115f,1,-0.070f);
+        glColor3f(0.70f,0.70f,0.68f); dq(-1,-0.150f,1,-0.115f);
+        glColor3f(0.88f,0.88f,0.86f); dq(-1,-0.072f,1,-0.060f);
+        glColor3f(0.72f,0.72f,0.70f);
+        for(float px=-0.85f;px<1;px+=0.18f){
+            dq(px-0.020f,-0.40f,px+0.020f,-0.150f);
+            glColor3f(0.65f,0.65f,0.63f); dq(px-0.030f,-0.165f,px+0.030f,-0.150f);
+            glColor3f(0.72f,0.72f,0.70f);
+        }
+    }
+    void drawMetro(){
+        float tx=g_metroX,ty=-0.114f,h=0.055f,len=0.42f;
+        for(int car=0;car<3;car++){
+            float cx=tx-car*(len+0.012f);
+            glColor3f(0.94f,0.95f,0.96f); dq(cx-len,ty-h,cx,ty);
+            glColor3f(0.15f,0.55f,0.75f); dq(cx-len,ty-h,cx,ty-h+0.010f);
+            glColor3f(0.10f,0.25f,0.55f); dq(cx-len,ty-h+0.010f,cx,ty);
+            glColor3f(0.88f,0.72f,0.12f); dq(cx-len,ty-h+0.010f,cx,ty-h+0.016f);
+            glColor3f(0.55f,0.72f,0.85f);
+            int nw=7; float ww=(len-0.030f)/nw*0.72f,gap=(len-0.030f-nw*ww)/(nw-1);
+            for(int wi=0;wi<nw;wi++){ float wx=cx-len+0.015f+wi*(ww+gap); dq(wx,ty-h+0.018f,wx+ww,ty-0.012f); }
+        }
+        float fx=g_metroX;
+        glColor3f(0.08f,0.20f,0.48f);
+        glBegin(GL_TRIANGLES);
+        glVertex2f(fx,ty-h); glVertex2f(fx+0.040f,ty-h*0.5f); glVertex2f(fx,ty);
+        glEnd();
+        glColor3f(1,0.95f,0.70f); dc(fx+0.032f,ty-h+0.014f,0.008f,10);
+    }
+    void drawBusRF(float x,float y,float dir,float r,float g,float b,float r2,float g2,float b2){
+        float w=(dir>0)?0.22f:-0.22f,h=0.090f;
+        glColor3f(r,g,b); dq(x,y,x+w,y+h);
+        glColor3f(r2,g2,b2); dq(x,y+h-0.010f,x+w,y+h+0.012f);
+        glColor3f(0.62f,0.80f,0.88f);
+        int nw=5; float ww=fabsf(w)*0.12f,wh=h*0.35f;
+        float startX=(dir>0)?x+0.025f:x-0.025f,stepX=(dir>0)?(fabsf(w)-0.06f)/(nw-1):-(fabsf(w)-0.06f)/(nw-1);
+        for(int i=0;i<nw;i++){float wx=startX+i*stepX; dq(wx,y+h*0.38f,wx+((dir>0)?ww:-ww),y+h*0.38f+wh);}
+        glColor3f(0.12f,0.12f,0.14f); dc(x+w*0.18f,y-0.016f,0.020f,16); dc(x+w*0.78f,y-0.016f,0.020f,16);
+        glColor3f(0.38f,0.38f,0.40f); dc(x+w*0.18f,y-0.016f,0.012f,14); dc(x+w*0.78f,y-0.016f,0.012f,14);
+    }
+    void drawCarRF(float x,float y,float dir,float r,float g,float b){
+        float w=(dir>0)?0.13f:-0.13f,h=0.055f;
+        glColor3f(r,g,b); dq(x,y,x+w,y+h);
+        glColor3f(r*0.85f,g*0.85f,b*0.85f);
+        float cs=(dir>0)?x+fabsf(w)*0.18f:x-fabsf(w)*0.18f,ce=(dir>0)?x+fabsf(w)*0.82f:x-fabsf(w)*0.82f;
+        dq(cs,y+h,ce,y+h+0.028f);
+        glColor3f(0.58f,0.78f,0.90f); dq(cs+((dir>0)?0.005f:-0.005f),y+h+0.003f,ce-((dir>0)?0.005f:-0.005f),y+h+0.025f);
+        glColor3f(0.12f,0.12f,0.14f); dc(x+w*0.22f,y-0.013f,0.016f,14); dc(x+w*0.78f,y-0.013f,0.016f,14);
+    }
+    void drawCNGRF(float x,float y,float dir,float r,float g,float b){
+        float w=(dir>0)?0.085f:-0.085f,h=0.058f;
+        glColor3f(r,g,b); dq(x,y,x+w,y+h);
+        glColor3f(r*0.80f,g*0.80f,b*0.80f); dq(x,y+h,x+w,y+h+0.018f);
+        glColor3f(0.12f,0.12f,0.14f); dc(x+w*0.15f,y-0.012f,0.014f,12); dc(x+w*0.80f,y-0.012f,0.014f,12);
+    }
+    void drawBikeRF(float x,float y,float dir,float r,float g,float b){
+        float w=(dir>0)?0.065f:-0.065f;
+        glColor3f(r,g,b); glLineWidth(3);
+        glBegin(GL_LINES);
+        glVertex2f(x,y+0.010f); glVertex2f(x+w*0.5f,y+0.038f);
+        glVertex2f(x+w*0.5f,y+0.038f); glVertex2f(x+w,y+0.010f);
+        glVertex2f(x,y+0.010f); glVertex2f(x+w,y+0.010f);
+        glEnd(); glLineWidth(1);
+        glColor3f(0.15f,0.15f,0.17f); dc(x,y,0.016f,14); dc(x+w,y,0.016f,14);
+    }
+    void drawVehicleRF(RFVehicle v){
+        float wx=v.baseX+v.offsetX;
+        if(v.type==0) drawBusRF(wx,v.baseY,v.dir,v.r,v.g,v.b,v.r2,v.g2,v.b2);
+        else if(v.type==1) drawCarRF(wx,v.baseY,v.dir,v.r,v.g,v.b);
+        else if(v.type==2) drawCNGRF(wx,v.baseY,v.dir,v.r,v.g,v.b);
+        else drawBikeRF(wx,v.baseY,v.dir,v.r,v.g,v.b);
+    }
+    void drawPersonRF(RFPerson p,int isLast){
+        float s=p.scale;
+        glColor3f(0.10f,0.08f,0.04f);
+        de(-0.012f*s,-0.060f*s,0.012f*s,0.006f*s,10);
+        de(0.012f*s,-0.060f*s,0.012f*s,0.006f*s,10);
+        glColor3f(p.pr,p.pg,p.pb);
+        dq(-0.018f*s,-0.058f*s,-0.004f*s,0.015f*s); dq(0.004f*s,-0.058f*s,0.018f*s,0.015f*s);
+        glColor3f(p.sr,p.sg,p.sb);
+        glBegin(GL_QUADS);
+        glVertex2f(-0.022f*s,0.015f*s); glVertex2f(0.022f*s,0.015f*s);
+        glVertex2f(0.024f*s,0.078f*s);  glVertex2f(-0.024f*s,0.078f*s);
+        glEnd();
+        glColor3f(p.skr,p.skg,p.skb); dc(0,0.110f*s,0.026f*s,20);
+        glColor3f(0.14f,0.08f,0.02f); dc(0,0.130f*s,0.025f*s,16);
+        if(isLast){
+            glColor3f(1,0,0); glLineWidth(2);
+            glBegin(GL_LINES); glVertex2f(0,0.165f*s); glVertex2f(0,0.140f*s); glEnd();
+            glBegin(GL_TRIANGLES);
+            glVertex2f(-0.008f*s,0.147f*s); glVertex2f(0,0.132f*s); glVertex2f(0.008f*s,0.147f*s);
+            glEnd();
+        }
+    }
+    void drawTrafficSignalRF(){
+        float sx=0.22f,sy=-0.580f;
+        glColor3f(0.35f,0.35f,0.38f); dq(sx-0.006f,sy-0.20f,sx+0.006f,sy);
+        glColor3f(0.12f,0.12f,0.14f); dq(sx-0.022f,sy,sx+0.022f,sy+0.080f);
+        if(g_signal==0) glColor3f(1,0.10f,0.10f); else glColor3f(0.20f,0,0);
+        dc(sx,sy+0.062f,0.013f,14);
+        if(g_signal==1) glColor3f(0.10f,1,0.22f); else glColor3f(0,0.18f,0.04f);
+        dc(sx,sy+0.030f,0.013f,14);
+    }
+    void drawLampRF(float x,float y){
+        glColor3f(0.42f,0.42f,0.45f); dq(x-0.005f,y,x+0.005f,y+0.24f);
+        glColor3f(1,0.95f,0.65f); dc(x+0.022f,y+0.262f,0.012f,12);
+    }
+    void handleCollision(){
+        int last=RF_NUM_PEOPLE-1;
+        RFPerson* pl=&g_people[last];
+        float lx=pl->baseX+pl->offsetX;
+        for(int i=0;i<last;i++){
+            RFPerson* o=&g_people[i];
+            float ox=o->baseX+o->offsetX;
+            if(fabsf(lx-ox)<RF_COLLIDE){
+                o->dir=-o->dir;
+                float ov=RF_COLLIDE-fabsf(lx-ox);
+                if(lx<ox) o->offsetX+=ov+0.01f; else o->offsetX-=ov+0.01f;
+                break;
+            }
+        }
+    }
+    void update(){
+        g_timeRF += 0.016f;
+        for(int i=0;i<RF_NUM_BIRDS;i++){
+            g_birdsRF[i].x += g_birdsRF[i].speed;
+            if(g_birdsRF[i].x > 1.3f) g_birdsRF[i].x = -1.3f;
+        }
+        if(g_paused) return;
+        g_sunAngle+=0.00010f;
+        for(int i=0;i<5;i++){g_cloudX[i]+=g_cloudSp[i];if(g_cloudX[i]>1.6f)g_cloudX[i]=-1.6f;}
+        if(g_signal==1){
+            for(int i=0;i<RF_NUM_VEHICLES;i++){
+                RFVehicle* v=&g_vehicles[i];
+                float eff=v->originalSpeed*g_roadSpeedMult;
+                v->offsetX+=eff*v->dir;
+                float wx=v->baseX+v->offsetX;
+                if(v->dir>0&&wx>1.25f){wx=-1.25f;v->offsetX=wx-v->baseX;}
+                else if(v->dir<0&&wx<-1.25f){wx=1.25f;v->offsetX=wx-v->baseX;}
+            }
+            g_metroX+=g_metroSpeed; if(g_metroX>1.5f) g_metroX=-1.5f;
+        } else {
+            for(int i=0;i<RF_NUM_VEHICLES;i++){
+                RFVehicle* v=&g_vehicles[i];
+                float cur=v->baseX+v->offsetX;
+                bool past=(v->dir>0)?(cur>0.22f):(cur<0.22f);
+                if(past){
+                    v->offsetX+=v->originalSpeed*g_roadSpeedMult*v->dir;
+                    float wx=v->baseX+v->offsetX;
+                    if(v->dir>0&&wx>1.25f){wx=-1.25f;v->offsetX=wx-v->baseX;}
+                    else if(v->dir<0&&wx<-1.25f){wx=1.25f;v->offsetX=wx-v->baseX;}
+                }
+            }
+        }
+        for(int i=0;i<RF_NUM_PEOPLE;i++){
+            RFPerson* p=&g_people[i];
+            p->offsetX+=p->speed*p->dir;
+            float wx=p->baseX+p->offsetX;
+            if(wx>1){wx=-1;p->offsetX=wx-p->baseX;}
+            else if(wx<-1){wx=1;p->offsetX=wx-p->baseX;}
+        }
+        handleCollision();
+    }
+    void render(){
+        glClear(GL_COLOR_BUFFER_BIT); glLoadIdentity();
+        if(g_nightRF){
+            glColor3f(0.04f,0.05f,0.15f);
+            glBegin(GL_QUADS);
+            glVertex2f(-1,1); glVertex2f(1,1); glVertex2f(1,0.0f); glVertex2f(-1,0.0f);
+            glEnd();
+            drawStarsRF();
+            glColor3f(0.90f,0.90f,1); dc(0.70f,0.78f,0.055f,32);
+            glColor3f(0.04f,0.05f,0.15f); dc(0.73f,0.80f,0.050f,32);
+            drawBackground();
+        } else {
+            drawBackground(); drawSunRF();
+        }
+        for(int i=0;i<5;i++) drawCloudRF(g_cloudX[i],g_cloudY[i]);
+        glColor3f(0.55f,0.62f,0.70f); dq(-1,-0.10f,-0.88f,0.55f);
+        glColor3f(0.50f,0.58f,0.66f); dq(-0.90f,-0.10f,-0.80f,0.42f);
+        drawSkyscraper(-0.72f,-0.10f,0.20f,0.82f,0.38f,0.52f,0.70f,0.55f,0.75f,0.90f,4,8);
+        drawSkyscraper(-0.50f,-0.10f,0.18f,0.68f,0.45f,0.60f,0.72f,0.60f,0.78f,0.92f,3,7);
+        drawSkyscraper(-0.30f,-0.10f,0.22f,0.92f,0.35f,0.50f,0.68f,0.52f,0.72f,0.90f,5,10);
+        drawSkyscraper(-0.06f,-0.10f,0.20f,0.75f,0.40f,0.55f,0.68f,0.58f,0.76f,0.88f,4,8);
+        drawSkyscraper(0.16f,-0.10f,0.18f,0.82f,0.38f,0.52f,0.70f,0.55f,0.75f,0.90f,4,9);
+        drawSkyscraper(0.54f,-0.10f,0.20f,0.72f,0.42f,0.56f,0.68f,0.58f,0.76f,0.90f,4,8);
+        for(float tx=-0.90f;tx<1;tx+=0.14f) drawTreeRF(tx,-0.42f,0.75f);
+        for(float tx=-0.85f;tx<1;tx+=0.22f) drawTreeRF(tx,-0.52f,0.55f);
+        drawViaduct(); drawMetro();
+        for(int i=0;i<RF_NUM_VEHICLES;i++) drawVehicleRF(g_vehicles[i]);
+        float lampX[]={-0.80f,-0.50f,-0.18f,0.12f,0.44f,0.76f};
+        for(int i=0;i<6;i++) drawLampRF(lampX[i],-0.550f);
+        drawTrafficSignalRF();
+        for(int i=0;i<RF_NUM_PEOPLE;i++){
+            RFPerson p=g_people[i]; float wx=p.baseX+p.offsetX;
+            glPushMatrix(); glTranslatef(wx,p.baseY,0); drawPersonRF(p,i==RF_NUM_PEOPLE-1); glPopMatrix();
+        }
+        for(int i=0;i<RF_NUM_BIRDS;i++) drawBirdRF(g_birdsRF[i]);
+        drawBillboard(-0.85f, -0.20f, 0.14f, 0.10f, 0.85f, 0.30f, 0.30f);
+        drawBillboard( 0.70f, -0.22f, 0.16f, 0.09f, 0.30f, 0.55f, 0.90f);
+        glColor3f(0.2f,0.2f,0.5f);
+        glRasterPos2f(-0.95f,-0.92f);
+        const char* hint="S=Signal  SPACE=Pause  Arrows=Speed  N=Night  ESC=Back";
+        for(const char* c=hint;*c;c++) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12,*c);
+        glutSwapBuffers();
+    }
+    void keyboard(unsigned char key,int,int){
+        if(key=='s'||key=='S') g_signal=!g_signal;
+        if(key==' ') g_paused=!g_paused;
+        if(key=='n'||key=='N') g_nightRF = !g_nightRF;
+        if(key=='m'||key=='M') g_muted=1;
+        if(key=='u'||key=='U') g_muted=0;
+    }
+    void specialKeys(int key,int,int){
+        if(key==GLUT_KEY_UP){g_roadSpeedMult+=0.05f;if(g_roadSpeedMult>2)g_roadSpeedMult=2;}
+        else if(key==GLUT_KEY_DOWN){g_roadSpeedMult-=0.05f;if(g_roadSpeedMult<0.2f)g_roadSpeedMult=0.2f;}
+        else if(key==GLUT_KEY_LEFT){g_metroSpeed-=0.00005f;if(g_metroSpeed<0.0001f)g_metroSpeed=0.0001f;}
+        else if(key==GLUT_KEY_RIGHT){g_metroSpeed+=0.00005f;if(g_metroSpeed>0.0012f)g_metroSpeed=0.0012f;}
+    }
+    void mouseFunc(int button,int state,int,int){
+        if(state==GLUT_DOWN){
+            if(button==GLUT_LEFT_BUTTON) g_signal=!g_signal;
+            if(button==GLUT_RIGHT_BUTTON) g_paused=!g_paused;
+        }
+    }
+    void init(){
+        float vx[10]={-0.90f,-0.40f,0.10f,0.65f,-0.70f,0.80f,0.30f,-0.10f,-0.55f,0.55f};
+        float vy[10]={-0.640f,-0.640f,-0.640f,-0.640f,-0.640f,-0.760f,-0.760f,-0.760f,-0.760f,-0.760f};
+        float sp[10]={0.00045f,0.00038f,0.00042f,0.00050f,0.00055f,0.00048f,0.00040f,0.00044f,0.00052f,0.00035f};
+        float dr[10]={1,1,1,1,1,-1,-1,-1,-1,-1};
+        int   typ[10]={0,1,0,2,0,0,2,1,3,3};
+        float cr[10]={0.85f,0.90f,0.95f,0.10f,0.22f,0.18f,0.85f,0.85f,0.88f,0.10f};
+        float cg[10]={0.50f,0.82f,0.95f,0.60f,0.55f,0.55f,0.50f,0.82f,0.42f,0.45f};
+        float cb[10]={0.05f,0.12f,0.95f,0.20f,0.88f,0.18f,0.05f,0.10f,0.08f,0.80f};
+        float cr2[10]={0.60f,0.70f,0.70f,0.08f,0.14f,0.12f,0.60f,0.65f,0.55f,0.06f};
+        float cg2[10]={0.35f,0.62f,0.70f,0.45f,0.38f,0.38f,0.32f,0.62f,0.25f,0.28f};
+        float cb2[10]={0.02f,0.08f,0.72f,0.14f,0.65f,0.12f,0.02f,0.06f,0.04f,0.55f};
+        for(int i=0;i<RF_NUM_VEHICLES;i++){
+            g_vehicles[i].baseX=vx[i]; g_vehicles[i].baseY=vy[i]; g_vehicles[i].offsetX=0;
+            g_vehicles[i].originalSpeed=sp[i]+((float)rand()/RAND_MAX)*0.00015f;
+            g_vehicles[i].speed=g_vehicles[i].originalSpeed;
+            g_vehicles[i].dir=dr[i]; g_vehicles[i].type=typ[i];
+            g_vehicles[i].r=cr[i]; g_vehicles[i].g=cg[i]; g_vehicles[i].b=cb[i];
+            g_vehicles[i].r2=cr2[i]; g_vehicles[i].g2=cg2[i]; g_vehicles[i].b2=cb2[i];
+        }
+        float px[8]={-0.80f,-0.55f,-0.20f,0.15f,0.50f,0.72f,-0.38f,0.88f};
+        float py[8]={-0.820f,-0.820f,-0.820f,-0.820f,-0.820f,-0.820f,-0.820f,-0.820f};
+        float ps[8]={0.00030f,0.00025f,0.00032f,0.00028f,0.00035f,0.00022f,0.00027f,0.00033f};
+        float pd[8]={1,-1,1,-1,1,-1,1,-1};
+        float psc[8]={0.80f,0.82f,0.78f,0.80f,0.82f,0.78f,0.80f,0.82f};
+        float shr[8]={0.12f,0.88f,0.22f,0.88f,0.65f,0.78f,0.10f,0.36f};
+        float shg[8]={0.42f,0.30f,0.62f,0.78f,0.22f,0.22f,0.38f,0.62f};
+        float shb[8]={0.78f,0.12f,0.18f,0.10f,0.65f,0.22f,0.62f,0.18f};
+        float pnr[8]={0.10f,0.12f,0.08f,0.08f,0.18f,0.18f,0.14f,0.10f};
+        float png[8]={0.10f,0.18f,0.18f,0.08f,0.10f,0.10f,0.06f,0.16f};
+        float pnb[8]={0.20f,0.42f,0.08f,0.14f,0.28f,0.06f,0.28f,0.06f};
+        float skr[8]={0.82f,0.95f,0.80f,0.84f,0.85f,0.82f,0.95f,0.76f};
+        float skg[8]={0.60f,0.74f,0.58f,0.58f,0.64f,0.58f,0.74f,0.48f};
+        float skb[8]={0.42f,0.50f,0.40f,0.38f,0.44f,0.40f,0.50f,0.32f};
+        int wave[8]={0,1,0,1,0,1,0,1};
+        for(int i=0;i<RF_NUM_PEOPLE;i++){
+            g_people[i].baseX=px[i]; g_people[i].baseY=py[i]; g_people[i].offsetX=0;
+            g_people[i].speed=(i==7)?0.00015f:ps[i]+((float)rand()/RAND_MAX)*0.00010f;
+            g_people[i].dir=pd[i]; g_people[i].scale=psc[i];
+            g_people[i].sr=shr[i]; g_people[i].sg=shg[i]; g_people[i].sb=shb[i];
+            g_people[i].pr=pnr[i]; g_people[i].pg=png[i]; g_people[i].pb=pnb[i];
+            g_people[i].skr=skr[i]; g_people[i].skg=skg[i]; g_people[i].skb=skb[i];
+            g_people[i].wave=wave[i];
+        }
+        initBirdsRF();
+    }
+    void reset(){ g_paused=0; g_signal=1; g_metroX=-0.30f; g_sunAngle=-0.3f; g_roadSpeedMult=1; g_timeRF=0; g_nightRF=false; init(); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  SCENE 6 – Futuristic City / Plane Crash
+// ═══════════════════════════════════════════════════════════════════════════════
+namespace SceneRahul {
+    int sceneMode=0;
+    float planeX=-1.25f, heliX=-1.25f, cloudMove=0;
+    float trainX=-1.30f, flyingCar1X=-1.20f, flyingCar2X=1.20f, droneX=-1.20f, podX=-1.25f;
+    float crashPlane1X=-1.25f, crashPlane2X=1.25f;
+    bool crashActive=false, planeCrash=false;
+    float crashSmokeSize=0, crashTimer=0;
+    float boat1X=-1.10f, boat2X=-1.20f, boat3X=-1.30f, boat4X=-1.40f;
+    struct CrashSmoke { float x,y,vy,alpha,r; bool active; };
+    static CrashSmoke cs[60];
+    void dr(float x,float y,float w,float h){ glBegin(GL_QUADS); glVertex2f(x,y); glVertex2f(x+w,y); glVertex2f(x+w,y+h); glVertex2f(x,y+h); glEnd(); }
+    void dtr(float x1,float y1,float x2,float y2,float x3,float y3){ glBegin(GL_TRIANGLES); glVertex2f(x1,y1); glVertex2f(x2,y2); glVertex2f(x3,y3); glEnd(); }
+    void dci(float cx,float cy,float r){ glBegin(GL_TRIANGLE_FAN); glVertex2f(cx,cy); for(int i=0;i<=360;i++){float a=i*PI/180; glVertex2f(cx+cosf(a)*r,cy+sinf(a)*r);} glEnd(); }
+    void del(float cx,float cy,float rx,float ry){ glBegin(GL_TRIANGLE_FAN); glVertex2f(cx,cy); for(int i=0;i<=60;i++){float a=2*PI*i/60;glVertex2f(cx+cosf(a)*rx,cy+sinf(a)*ry);} glEnd(); }
+    void drawGradRect(float x,float y,float w,float h,float r1,float g1,float b1,float r2,float g2,float b2){
+        glBegin(GL_QUADS);
+        glColor3f(r1,g1,b1); glVertex2f(x,y); glVertex2f(x+w,y);
+        glColor3f(r2,g2,b2); glVertex2f(x+w,y+h); glVertex2f(x,y+h);
+        glEnd();
+    }
+    void drawSky(){
+        if(sceneMode==0)      drawGradRect(-1,-0.02f,2,1.02f,0.44f,0.76f,0.98f,0.12f,0.45f,0.82f);
+        else if(sceneMode==1) drawGradRect(-1,-0.02f,2,1.02f,1,0.60f,0.25f,0.72f,0.28f,0.45f);
+        else                  drawGradRect(-1,-0.02f,2,1.02f,0.08f,0.10f,0.24f,0.28f,0.12f,0.38f);
+    }
+    void drawGround(){
+        if(sceneMode==0)      glColor3f(0.28f,0.62f,0.20f);
+        else if(sceneMode==1) glColor3f(0.32f,0.55f,0.18f);
+        else                  glColor3f(0.16f,0.34f,0.14f);
+        dr(-1,-1,2,0.98f);
+    }
+    void drawSunR(){
+        if(sceneMode==0){glColor3f(1,0.92f,0.10f);dci(-0.78f,0.78f,0.07f);}
+        else if(sceneMode==1){glColor3f(1,0.45f,0.08f);dci(-0.72f,0.55f,0.075f);}
+        else{glColor3f(0.92f,0.94f,1);dci(0.78f,0.78f,0.06f);}
+    }
+    void drawStars(){
+        if(sceneMode==2){
+            for(int i=0;i<50;i++){
+                float x = -0.98f + fmodf(i*0.037f, 1.96f);
+                float y = 0.10f + fmodf(i*0.061f, 0.88f);
+                float a = 0.4f + 0.6f*fabsf(sinf(cloudMove + i*0.5f));
+                glColor3f(a,a,a);
+                glPointSize(2); glBegin(GL_POINTS); glVertex2f(x,y); glEnd();
+            }
+            glPointSize(1);
+        }
+    }
+    void drawClouds(){
+        glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        glColor4f(1,1,1,sceneMode==2?0.25f:0.85f);
+        for(int i=0;i<4;i++){
+            float cx = -0.9f + fmodf(cloudMove*0.0005f + i*0.5f, 2.0f);
+            float cy = 0.55f + (i%2)*0.10f;
+            del(cx-0.06f, cy, 0.06f, 0.03f);
+            del(cx+0.06f, cy, 0.06f, 0.03f);
+            del(cx, cy, 0.07f, 0.04f);
+        }
+        glDisable(GL_BLEND);
+    }
+    void drawCity(){
+        for(int i=0;i<8;i++){
+            float bx = -0.95f + i*0.24f;
+            float bw = 0.18f;
+            float bh = 0.25f + (i%3)*0.10f;
+            if(sceneMode==0)      glColor3f(0.55f,0.70f,0.90f);
+            else if(sceneMode==1) glColor3f(0.60f,0.40f,0.35f);
+            else                  glColor3f(0.20f,0.28f,0.50f);
+            dr(bx, 0.0f, bw, bh);
+            for(int wy=0;wy<3;wy++){
+                for(int wx=0;wx<3;wx++){
+                    if(sceneMode==2 && ((i+wy+wx)%3==0)) glColor3f(1.0f,0.90f,0.40f);
+                    else if(sceneMode==2) glColor3f(0.10f,0.15f,0.30f);
+                    else glColor3f(0.85f,0.92f,1.0f);
+                    dr(bx+0.025f+wx*0.045f, 0.05f+wy*0.07f, 0.025f, 0.04f);
+                }
+            }
+            glColor3f(0.85f,0.30f,0.20f);
+            dr(bx+bw*0.5f-0.004f, bh, 0.008f, 0.05f);
+            glColor3f(1,0.40f,0.40f);
+            dci(bx+bw*0.5f, bh+0.05f, 0.008f);
+        }
+    }
+    void drawPlane(){
+        glPushMatrix(); glTranslatef(planeX, 0.55f, 0);
+        glColor3f(0.85f,0.85f,0.90f);
+        del(0,0,0.10f,0.025f);
+        dtr(-0.06f,0.01f, 0.02f, 0.10f, 0.04f, 0.01f);
+        dtr(-0.06f,-0.01f, 0.02f, -0.10f, 0.04f, -0.01f);
+        dtr(-0.10f,0, -0.12f, 0.05f, -0.08f, 0.02f);
+        glColor3f(0.40f,0.60f,0.85f); dci(0.06f, 0, 0.012f);
+        glPopMatrix();
+    }
+    void drawHeli(){
+        glPushMatrix(); glTranslatef(heliX, 0.65f, 0);
+        glColor3f(0.90f,0.65f,0.15f);
+        del(0,0,0.06f,0.035f);
+        glColor3f(0.55f,0.75f,0.90f);
+        dtr(0.06f,0.02f, 0.12f, 0.01f, 0.06f,-0.01f);
+        glColor3f(0.30f,0.30f,0.32f); dr(-0.015f,0.03f, 0.03f, 0.008f);
+        glPushMatrix(); glTranslatef(0, 0.06f, 0); glRotatef(cloudMove*30, 0, 0, 1);
+        glColor3f(0.40f,0.40f,0.42f);
+        dr(-0.10f, -0.004f, 0.20f, 0.008f);
+        dr(-0.004f, -0.10f, 0.008f, 0.20f);
+        glPopMatrix();
+        glColor3f(0.30f,0.20f,0.10f);
+        dr(-0.04f,-0.02f, 0.02f, 0.005f);
+        dr(0.02f,-0.02f, 0.02f, 0.005f);
+        glPopMatrix();
+    }
+    void drawFlyingCar(float x, float y, float r,float g,float b){
+        glColor3f(r,g,b); dr(x, y, 0.10f, 0.035f);
+        glColor3f(0.60f,0.80f,0.95f); dr(x+0.02f, y+0.035f, 0.06f, 0.015f);
+        glColor3f(1,1,0.60f); dci(x-0.005f, y+0.015f, 0.008f);
+    }
+    void drawDrone(float x, float y){
+        glPushMatrix(); glTranslatef(x, y, 0);
+        glColor3f(0.20f,0.20f,0.22f); dr(-0.03f,-0.005f,0.06f,0.01f);
+        glColor3f(0.90f,0.20f,0.20f); dci(0,0,0.006f);
+        glColor3f(0.40f,0.40f,0.42f);
+        dci(-0.03f,0.0f,0.012f); dci(0.03f,0.0f,0.012f);
+        glPopMatrix();
+    }
+    void drawBoatR(float x, float y, float s, float r, float g, float b){
+        glPushMatrix(); glTranslatef(x,y,0); glScalef(s,s,1);
+        glColor3f(r,g,b);
+        glBegin(GL_POLYGON);
+        glVertex2f(-0.08f,0); glVertex2f(0.08f,0);
+        glVertex2f(0.06f,-0.025f); glVertex2f(-0.06f,-0.025f);
+        glEnd();
+        glColor3f(0.92f,0.92f,0.95f); dtr(0,0.06f, 0,0.01f, 0.05f,0.02f);
+        glColor3f(0.35f,0.22f,0.10f); dr(-0.002f,0,0.004f,0.06f);
+        glPopMatrix();
+    }
+    void drawTrainR(){
+        glPushMatrix(); glTranslatef(trainX, -0.10f, 0);
+        for(int car=0;car<3;car++){
+            float cx = car*0.20f;
+            glColor3f(0.30f,0.55f,0.85f); dr(cx, 0, 0.18f, 0.06f);
+            glColor3f(0.10f,0.20f,0.35f); dr(cx, 0.06f, 0.18f, 0.015f);
+            glColor3f(0.85f,0.95f,1);
+            for(int w=0;w<3;w++) dr(cx+0.02f+w*0.05f, 0.015f, 0.025f, 0.03f);
+        }
+        glColor3f(0.20f,0.20f,0.22f);
+        dci(0.04f,-0.005f,0.012f); dci(0.14f,-0.005f,0.012f);
+        dci(0.24f,-0.005f,0.012f); dci(0.34f,-0.005f,0.012f);
+        dci(0.44f,-0.005f,0.012f); dci(0.54f,-0.005f,0.012f);
+        glPopMatrix();
+    }
+    void drawPodR(){
+        glPushMatrix(); glTranslatef(podX, 0.75f, 0);
+        glColor3f(0.85f,0.20f,0.65f);
+        del(0,0,0.07f,0.03f);
+        glColor3f(1,0.75f,0.95f); dci(0.04f,0,0.012f);
+        glColor3f(1,0.90f,0.40f);
+        for(int i=0;i<3;i++) dci(-0.04f + i*0.03f, -0.008f, 0.005f);
+        glPopMatrix();
+    }
+    void drawCrashPlane(float x, float y, float tilt){
+        glPushMatrix(); glTranslatef(x, y, 0); glRotatef(tilt, 0, 0, 1);
+        glColor3f(0.80f,0.20f,0.15f);
+        del(0,0,0.09f,0.022f);
+        dtr(-0.06f,0, 0.02f, 0.09f, 0.04f, 0);
+        dtr(-0.06f,0, 0.02f,-0.09f, 0.04f, 0);
+        glPopMatrix();
+    }
+    void spawnCrashSmoke(float x, float y){
+        for(int i=0;i<60;i++){
+            if(!cs[i].active){
+                cs[i].x = x + ((rand()%100)-50)/500.0f;
+                cs[i].y = y + ((rand()%100)-50)/500.0f;
+                cs[i].vy = 0.001f + (rand()%100)/10000.0f;
+                cs[i].alpha = 0.9f;
+                cs[i].r = 0.02f + (rand()%100)/3000.0f;
+                cs[i].active = true; return;
+            }
+        }
+    }
+    void updateCrashSmoke(){
+        for(int i=0;i<60;i++){
+            if(!cs[i].active) continue;
+            cs[i].y += cs[i].vy;
+            cs[i].r += 0.0005f;
+            cs[i].alpha -= 0.005f;
+            if(cs[i].alpha <= 0) cs[i].active = false;
+        }
+    }
+    void drawCrashSmoke(){
+        glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+        for(int i=0;i<60;i++){
+            if(!cs[i].active) continue;
+            glColor4f(0.25f,0.25f,0.25f, cs[i].alpha);
+            dci(cs[i].x, cs[i].y, cs[i].r);
+        }
+        glDisable(GL_BLEND);
+    }
